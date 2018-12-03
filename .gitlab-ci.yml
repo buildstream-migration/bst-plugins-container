@@ -20,6 +20,9 @@ before_script:
   - git clone https://gitlab.com/buildstream/buildstream.git
   - pip3 install --user buildstream
 
+  # Install extra docker dependency
+  - pip3 install requests
+
   - adduser -m buildstream
   - chown -R buildstream:buildstream .
 
