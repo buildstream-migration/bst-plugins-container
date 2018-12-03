@@ -16,11 +16,12 @@ before_script:
   - mount
   - df -h
 
+  # Hackily install buildstream
+  - git clone https://gitlab.com/buildstream/buildstream.git
+  - pip3 install --user buildstream
+
   - adduser -m buildstream
   - chown -R buildstream:buildstream .
-
-  - pip3 install pytest
-  - pip3 install requests
 
 #####################################################
 #                  Prepare stage                    #
