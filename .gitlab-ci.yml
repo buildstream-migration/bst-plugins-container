@@ -18,7 +18,7 @@ before_script:
 
   # Hackily install buildstream
   - git clone https://gitlab.com/buildstream/buildstream.git
-  - pip3 install --user buildstream
+  - cd buildstream && pip3 install .
 
   # Install extra docker dependency
   - pip3 install requests
