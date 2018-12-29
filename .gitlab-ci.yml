@@ -2,7 +2,7 @@ image: buildstream/testsuite-fedora:28-master-123-7ce6581b
 
 stages:
   - test
-  - docs
+  - post
 
 before_script:
   # Diagnostics
@@ -27,28 +27,29 @@ tests:
   script:
     - su buildstream -c 'tox -- --color=yes'
 
-
-# Automatically build documentation, only for merges which land
-# on master branch.
-#
-# Note: We still do not enforce a consistent installation of python2
-#       or sphinx, as python2 will significantly grow the backing image.
-#
+docs:
+  stage: test
+  script:
+  - pip3 install --user .[doc]
+  - pip3 install --user git+https://gitlab.com/BuildStream/buildstream.git
+  - make -C doc
+  - mv doc/build/html public
+  artifacts:
+    paths:
+    - public/
 
 #####################################################
-#                  Docs stage                       #
+#                  Post stage                       #
 #####################################################
 
 pages:
-  stage: docs
+  stage: post
+  dependencies:
+  - docs
+  # XXX: This script section is really a no-op but we need to have it since
+  # GitLab CI mandates that the pages script can't be blank.
   script:
-  - dnf install -y python2
-  - pip3 install sphinx
-  - pip3 install sphinx-click
-  - pip3 install sphinx_rtd_theme
-  - pip3 install --user .
-  - make -C doc
-  - mv doc/build/html public
+  - find public/
   artifacts:
     paths:
     - public/

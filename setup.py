@@ -57,6 +57,11 @@ setup(name='BuildStream-plugins-container',
               'pytest-xdist',
               'pytest >= 3.1.0'
           ],
+          'doc': [
+              'sphinx',
+              'sphinx-click',
+              'sphinx_rtd_theme'
+           ],
       },
       zip_safe=False
 )  #eof setup()
