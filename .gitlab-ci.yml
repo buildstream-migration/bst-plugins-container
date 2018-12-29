@@ -1,9 +1,5 @@
 image: buildstream/testsuite-fedora:28-master-123-7ce6581b
 
-cache:
-  paths:
-    - cache/
-
 stages:
   - test
   - docs
