@@ -9,7 +9,6 @@
 .eggs
 
 # Test detritus
-.coverage
 .pytest_cache
 /tmp/
 

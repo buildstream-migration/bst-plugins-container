@@ -8,7 +8,6 @@ cache:
 stages:
   - prepare
   - test
-  - coverage
   - docs
 
 before_script:
@@ -85,36 +84,8 @@ tests:
     # We run as a simple user to test for permission issues.
     - su buildstream -c 'python3 setup.py test --index-url invalid://uri'
 
-    # Go back top level and collect our reports
-    - cd ../.. #you may only have to go back one level here...
-    - mkdir -p coverage-linux/
-    - cp dist/bst-plugins-container/.coverage.* coverage-linux/coverage.linux
-  artifacts:
-    paths:
-    - coverage-linux/
   dependencies:
   - source_dist
-
-#####################################################
-#                Coverage stage                     #
-#####################################################
-
-# Collate coverage reports
-#
-coverage:
-  stage: coverage
-  coverage: '/TOTAL +\d+ +\d+ +(\d+\.\d+)%/'
-  script:
-    - cd dist && ./unpack.sh && cd bst-plugins-container
-    - pip3 install --no-index .
-    - mkdir report
-    - cd report
-    - cp ../../../coverage-linux/coverage.linux .
-    - coverage combine --rcfile=../.coveragerc -a coverage.*
-    - coverage report --rcfile=../.coveragerc -m
-  dependencies:
-  - source_dist
-  - tests
 
 # Automatically build documentation, only for merges which land
 # on master branch.

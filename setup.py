@@ -50,14 +50,9 @@ setup(name='BuildStream-plugins-container',
       },
       setup_requires=['pytest-runner', 'setuptools_scm'],
       tests_require=['pep8',
-                     # Pin coverage to 4.2 for now, we're experiencing
-                     # random crashes with 4.4.2
-                     'coverage == 4.4.0',
                      'pytest-datafiles',
                      'pytest-env',
                      'pytest-pep8',
-                     'pytest-cov',
-                     # Provide option to run tests in parallel, less reliable
                      'pytest-xdist',
                      'pytest >= 3.1.0'],
       zip_safe=False
