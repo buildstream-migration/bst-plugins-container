@@ -70,14 +70,12 @@ source_dist:
 #                    Test stage                     #
 #####################################################
 
-integration_linux:
+tests:
   stage: test
   variables:
     PYTEST_ADDOPTS: "--color=yes"
   script:
 
-    - export INTEGRATION_CACHE="$(pwd)/cache/integration-cache"
-    
     # Unpack and get into dist/bst-plugins-container
     - cd dist && ./unpack.sh
     - chown -R buildstream:buildstream bst-plugins-container
@@ -97,34 +95,6 @@ integration_linux:
   dependencies:
   - source_dist
 
-integration_unix:
-  stage: test
-  variables:
-    BST_FORCE_BACKEND: "unix"
-    PYTEST_ADDOPTS: "--color=yes"
-  script:
-
-    - export INTEGRATION_CACHE="$(pwd)/cache/integration-cache"
-
-    # Unpack and get into dist/bst-plugins-container
-    - cd dist && ./unpack.sh && cd bst-plugins-container
-
-    # Since the unix platform is required to run as root, no user change required
-    - python3 setup.py test --index-url invalid://uri
-
-    # Go back top level and collect our reports
-    - cd ../..
-    - mkdir -p coverage-unix/
-    - cp dist/bst-plugins-container/.coverage.* coverage-unix/coverage.unix
-
-  artifacts:
-    paths:
-    - coverage-unix/
-    - logs-unix/
-
-  dependencies:
-  - source_dist
-
 #####################################################
 #                Coverage stage                     #
 #####################################################
@@ -140,13 +110,11 @@ coverage:
     - mkdir report
     - cd report
     - cp ../../../coverage-linux/coverage.linux .
-    - cp ../../../coverage-unix/coverage.unix .
     - coverage combine --rcfile=../.coveragerc -a coverage.*
     - coverage report --rcfile=../.coveragerc -m
   dependencies:
   - source_dist
-  - integration_linux
-  - integration_unix
+  - tests
 
 # Automatically build documentation, only for merges which land
 # on master branch.
