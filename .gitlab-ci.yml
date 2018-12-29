@@ -1,12 +1,10 @@
 image: buildstream/testsuite-fedora:28-master-123-7ce6581b
 
-
 cache:
   paths:
     - cache/
 
 stages:
-  - prepare
   - test
   - docs
 
@@ -15,55 +13,12 @@ before_script:
   - mount
   - df -h
 
-  # Hackily install buildstream
-  - git clone https://gitlab.com/buildstream/buildstream.git
-  - cd buildstream && pip3 install . && cd ..
-
-  # Install extra docker dependency
-  - pip3 install requests
+  # Install build & test dependencies
+  - dnf install -y gcc python3-devel
+  - pip3 install tox tox-venv
 
   - adduser -m buildstream
   - chown -R buildstream:buildstream .
-
-#####################################################
-#                  Prepare stage                    #
-#####################################################
-
-# Create a source distribution
-#
-source_dist:
-  stage: prepare
-  script:
-
-  # Generate the source distribution tarball
-  #
-  - python3 setup.py sdist
-  - tar -ztf dist/*
-  - tarball=$(cd dist && echo $(ls *))
-
-  # Create an installer script
-  - |
-    cat > dist/install.sh << EOF
-    #!/bin/sh
-    tar -zxf ${tarball}
-    cd ${tarball%.tar.gz}
-    pip3 install --no-index .
-    EOF
-
-  # unpack tarball as `dist/bst-plugins-container` directory
-  - |
-    cat > dist/unpack.sh << EOF
-    #!/bin/sh
-    tar -zxf ${tarball}
-    mv ${tarball%.tar.gz} bst-plugins-container
-    EOF
-
-  # Make our helpers executable
-  - chmod +x dist/install.sh
-  - chmod +x dist/unpack.sh
-  artifacts:
-    paths:
-    - dist/
 
 #####################################################
 #                    Test stage                     #
@@ -72,20 +27,10 @@ source_dist:
 tests:
   stage: test
   variables:
-    PYTEST_ADDOPTS: "--color=yes"
+    PY_COLORS: 1
   script:
+    - su buildstream -c 'tox -- --color=yes'
 
-    # Unpack and get into dist/bst-plugins-container
-    - cd dist && ./unpack.sh
-    - chown -R buildstream:buildstream bst-plugins-container
-    - cd bst-plugins-container
-
-    # Run the tests from the source distribution.
-    # We run as a simple user to test for permission issues.
-    - su buildstream -c 'python3 setup.py test --index-url invalid://uri'
-
-  dependencies:
-  - source_dist
 
 # Automatically build documentation, only for merges which land
 # on master branch.

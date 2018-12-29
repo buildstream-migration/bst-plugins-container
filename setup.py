@@ -48,12 +48,15 @@ setup(name='BuildStream-plugins-container',
               'docker = bst_plugins_docker.sources.docker',
           ]
       },
-      setup_requires=['pytest-runner', 'setuptools_scm'],
-      tests_require=['pep8',
-                     'pytest-datafiles',
-                     'pytest-env',
-                     'pytest-pep8',
-                     'pytest-xdist',
-                     'pytest >= 3.1.0'],
+      extras_require={
+          'test': [
+              'pep8',
+              'pytest-datafiles',
+              'pytest-env',
+              'pytest-pep8',
+              'pytest-xdist',
+              'pytest >= 3.1.0'
+          ],
+      },
       zip_safe=False
 )  #eof setup()
