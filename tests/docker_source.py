@@ -6,7 +6,7 @@ from tests.testutils import cli, plugin_import
 
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
-    "docker_source"
+    'docker-source'
 )
 
 @pytest.mark.datafiles(DATA_DIR)
