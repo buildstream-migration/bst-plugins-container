@@ -28,40 +28,41 @@ except ImportError:
           "pip (pip3 install setuptools).")
     sys.exit(1)
 
-setup(name='BuildStream-plugins-container',
-      version="0.1.0",
-      description="A collection of BuildStream plugins that are to do with containers.",
-      license='LGPL',
-      packages=find_packages(exclude=['tests', 'tests.*']),
-      include_package_data=True,
-      install_requires=[
-          'requests',
-          'setuptools'
-      ],
-      package_data={
-          'buildstream': [
-              'bst_plugins_container/elements/**.yaml'
-          ]
-      },
-      entry_points={
-          'buildstream.plugins': [
-              'docker = bst_plugins_docker.sources.docker',
-          ]
-      },
-      extras_require={
-          'test': [
-              'pep8',
-              'pytest-datafiles',
-              'pytest-env',
-              'pytest-pep8',
-              'pytest-xdist',
-              'pytest >= 3.1.0'
-          ],
-          'doc': [
-              'sphinx',
-              'sphinx-click',
-              'sphinx_rtd_theme'
-           ],
-      },
-      zip_safe=False
-)  #eof setup()
+setup(
+    name='BuildStream-plugins-container',
+    version="0.1.0",
+    description="A collection of BuildStream plugins that are to do with containers.",
+    license='LGPL',
+    packages=find_packages(exclude=['tests', 'tests.*']),
+    include_package_data=True,
+    install_requires=[
+        'requests',
+        'setuptools'
+    ],
+    package_data={
+        'buildstream': [
+            'bst_plugins_container/elements/**.yaml'
+        ]
+    },
+    entry_points={
+        'buildstream.plugins': [
+            'docker = bst_plugins_docker.sources.docker',
+        ]
+    },
+    extras_require={
+        'test': [
+            'pep8',
+            'pytest-datafiles',
+            'pytest-env',
+            'pytest-pep8',
+            'pytest-xdist',
+            'pytest >= 3.1.0'
+        ],
+        'doc': [
+            'sphinx',
+            'sphinx-click',
+            'sphinx_rtd_theme'
+         ],
+    },
+    zip_safe=False
+)  # eof setup()
