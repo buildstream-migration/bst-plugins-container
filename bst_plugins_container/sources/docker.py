@@ -51,8 +51,6 @@ contain device nodes so those will be dropped. Any regular files in the /dev
 directory will also be dropped.
 """
 
-import requests
-
 import hashlib
 import json
 import os
@@ -60,6 +58,8 @@ import platform
 import shutil
 import tarfile
 import urllib.parse
+
+import requests
 
 from buildstream import Source, SourceError, Consistency
 from buildstream.utils import save_file_atomic, sha256sum, link_files
@@ -191,7 +191,7 @@ class DockerRegistryV2Client():
     #    reference (str): Either a tag name (such as 'latest') or the content
     #                     digest of an exact version of the image.
     #    architecture (str): Architecture name (amd64, arm64, etc.)
-    #    os (str): OS name (e.g. linux)
+    #    os_ (str): OS name (e.g. linux)
     #
     # Raises:
     #    requests.RequestException, if network errors occur
@@ -199,7 +199,7 @@ class DockerRegistryV2Client():
     # Returns:
     #    (str, str): A tuple of the manifest content as text, and its content hash
     def manifest(self, image_path, reference,
-                 architecture=default_architecture(), os=default_os()):
+                 architecture=default_architecture(), os_=default_os()):
         accept_types = ['application/vnd.docker.distribution.manifest.v2+json',
                         'application/vnd.docker.distribution.manifest.list.v2+json']
 
@@ -239,10 +239,10 @@ class DockerRegistryV2Client():
             for sub in manifest['manifests']:
                 if sub['platform']['architecture'] == architecture and sub['platform']['os']:
                     sub_digest = sub['digest']
-                    return self.manifest(image_path, sub_digest, architecture=architecture, os=os)
+                    return self.manifest(image_path, sub_digest, architecture=architecture, os_=os_)
                 else:
                     raise DockerManifestError(
-                        "No images found for architecture {}, OS {}".format(architecture, os),
+                        "No images found for architecture {}, OS {}".format(architecture, os_),
                         manifest=response.text)
         elif manifest['mediaType'] == 'application/vnd.docker.distribution.manifest.v2+json':
             return response.text, our_digest
@@ -339,7 +339,7 @@ class DockerSource(Source):
         with self.timed_activity("Fetching image manifest for image: '{}:{}' from: {}"
                                  .format(self.image, self.tag, self.registry_url)):
             try:
-                manifest, digest = self.client.manifest(self.image, self.tag)
+                _, digest = self.client.manifest(self.image, self.tag)
             except DockerManifestError as e:
                 self.log("Problem downloading manifest", detail=e.manifest)
                 raise
@@ -395,7 +395,6 @@ class DockerSource(Source):
                 raise
             except (OSError, requests.RequestException) as e:
                 raise SourceError(e) from e
-
 
             for layer in manifest['layers']:
                 if layer['mediaType'] != 'application/vnd.docker.image.rootfs.diff.tar.gzip':
