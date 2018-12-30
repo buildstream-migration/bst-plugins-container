@@ -24,8 +24,17 @@ tests:
   stage: test
   variables:
     PY_COLORS: 1
+    TOXENV: py36
   script:
     - su buildstream -c 'tox -- --color=yes'
+
+lint:
+  stage: test
+  variables:
+    PY_COLORS: 1
+    TOXENV: flake8
+  script:
+    - su buildstream -c 'tox'
 
 docs:
   stage: test
