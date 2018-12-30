@@ -9,11 +9,13 @@ DATA_DIR = os.path.join(
     'docker-source'
 )
 
+
 @pytest.mark.datafiles(DATA_DIR)
 def test_docker_fetch(cli, datafiles, plugin_import):
     project = os.path.join(datafiles.dirname, datafiles.basename)
     result = cli.run(project=project, args=['source', 'fetch', 'dockerhub-alpine.bst'])
     result.assert_success()
+
 
 @pytest.mark.datafiles(DATA_DIR)
 def test_docker_source_checkout(cli, datafiles, plugin_import):
