@@ -51,10 +51,8 @@ setup(
     },
     extras_require={
         'test': [
-            'pep8',
             'pytest-datafiles',
             'pytest-env',
-            'pytest-pep8',
             'pytest-xdist',
             'pytest >= 3.1.0'
         ],
