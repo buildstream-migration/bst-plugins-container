@@ -3,8 +3,6 @@ import pytest
 
 from buildstream.plugintestutils import cli
 
-from tests.testutils import plugin_import
-
 
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -13,14 +11,14 @@ DATA_DIR = os.path.join(
 
 
 @pytest.mark.datafiles(DATA_DIR)
-def test_docker_fetch(cli, datafiles, plugin_import):
+def test_docker_fetch(cli, datafiles):
     project = os.path.join(datafiles.dirname, datafiles.basename)
     result = cli.run(project=project, args=['source', 'fetch', 'dockerhub-alpine.bst'])
     result.assert_success()
 
 
 @pytest.mark.datafiles(DATA_DIR)
-def test_docker_source_checkout(cli, datafiles, plugin_import):
+def test_docker_source_checkout(cli, datafiles):
     project = os.path.join(datafiles.dirname, datafiles.basename)
     checkout = os.path.join(cli.directory, 'checkout')
     result = cli.run(project=project, args=['source', 'checkout', '--fetch', 'dockerhub-alpine.bst', checkout])
