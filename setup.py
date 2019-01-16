@@ -29,7 +29,7 @@ except ImportError:
     sys.exit(1)
 
 setup(
-    name='BuildStream-plugins-container',
+    name='bst-plugins-container',
     version="0.1.0",
     description="A collection of BuildStream plugins that are to do with containers.",
     license='LGPL',
