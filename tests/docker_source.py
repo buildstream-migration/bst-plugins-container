@@ -1,7 +1,9 @@
 import os
 import pytest
 
-from tests.testutils import cli, plugin_import
+from buildstream.plugintestutils import cli
+
+from tests.testutils import plugin_import
 
 
 DATA_DIR = os.path.join(
