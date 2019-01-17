@@ -1,19 +1,13 @@
-image: buildstream/testsuite-fedora:28-master-123-7ce6581b
+image: python:3.7-stretch
 
 stages:
   - test
   - post
 
 before_script:
-  # Diagnostics
-  - mount
-  - df -h
-
-  # Install build & test dependencies
-  - dnf install -y gcc python3-devel
   - pip3 install tox tox-venv
 
-  - adduser -m buildstream
+  - useradd -Um buildstream
   - chown -R buildstream:buildstream .
 
 #####################################################
@@ -24,7 +18,7 @@ tests:
   stage: test
   variables:
     PY_COLORS: 1
-    TOXENV: py36
+    TOXENV: py37
   script:
     - su buildstream -c 'tox -- --color=yes'
 
