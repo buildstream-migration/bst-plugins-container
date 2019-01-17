@@ -4,40 +4,56 @@ stages:
   - test
   - post
 
-before_script:
-  - pip3 install tox tox-venv
-
-  - useradd -Um buildstream
-  - chown -R buildstream:buildstream .
-
 #####################################################
 #                    Test stage                     #
 #####################################################
 
-tests:
+.tox-template: &tox
   stage: test
-  variables:
-    PY_COLORS: 1
-    TOXENV: py37
+  before_script:
+    - pip3 install tox tox-venv
+    - useradd -Um buildstream
+    - chown -R buildstream:buildstream .
   script:
-    - su buildstream -c 'tox -- --color=yes'
+    - su buildstream -c tox
+  variables: &tox-variables
+    PY_COLORS: 1
+    PYTEST_ADDOPTS: '--color=yes'
+
+tests-py37:
+  <<: *tox
+  variables:
+    <<: *tox-variables
+    TOXENV: py37
+
+tests-py36:
+  <<: *tox
+  image: python:3.6-stretch
+  variables:
+    <<: *tox-variables
+    TOXENV: py36
+
+tests-py35:
+  <<: *tox
+  image: python:3.5-stretch
+  variables:
+    <<: *tox-variables
+    TOXENV: py35
 
 lint:
-  stage: test
+  <<: *tox
   variables:
-    PY_COLORS: 1
+    <<: *tox-variables
     TOXENV: flake8
-  script:
-    - su buildstream -c 'tox'
 
 docs:
-  stage: test
+  <<: *tox
   variables:
-    PY_COLORS: 1
+    <<: *tox-variables
     TOXENV: docs
   script:
-  - su buildstream -c 'tox'
-  - mv doc/build/html public
+    - su buildstream -c tox
+    - mv doc/build/html public
   artifacts:
     paths:
     - public/
