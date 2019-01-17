@@ -38,10 +38,11 @@ lint:
 
 docs:
   stage: test
+  variables:
+    PY_COLORS: 1
+    TOXENV: docs
   script:
-  - pip3 install --user .[doc]
-  - pip3 install --user git+https://gitlab.com/BuildStream/buildstream.git
-  - make -C doc
+  - su buildstream -c 'tox'
   - mv doc/build/html public
   artifacts:
     paths:
