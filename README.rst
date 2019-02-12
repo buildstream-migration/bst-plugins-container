@@ -32,7 +32,7 @@ project, you will first need to install bst-plugins-container via pip::
     cd bst-plugins-container
     pip install --user -e .
 
-To ensure it's installed, try: ``pip show BuildStream-plugins-container``,
+To ensure it's installed, try: ``pip show bst-plugins-container``,
 this should show information about the package.
 
 .. note::
@@ -46,7 +46,7 @@ this is explained in BuildStream's
 Pre-merge checklist
 ===================
 
-Before mergin changes, please check the following:
+Before merging changes, please check the following:
 
 1. Any new plugins have:
    1.1 Added have a copyright statement attached.
@@ -77,4 +77,3 @@ Pre-release checklist
 5. Update the variables ``version`` and ``release`` in ``doc/source/conf.py``
 6. Create and push an annotated tag for this version, containing all the
    items from the latest NEWS entry.
-
