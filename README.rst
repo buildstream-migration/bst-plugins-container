@@ -1,6 +1,9 @@
 BuildStream Container Plugins
 *****************************
 
+.. image:: https://gitlab.com/BuildStream/bst-plugins-container/badges/master/pipeline.svg
+   :target: https://gitlab.com/BuildStream/bst-plugins-container/commits/master
+
 A collection of plugins for BuildStream that are related to containers.
 
 How to use this repo
