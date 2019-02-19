@@ -52,9 +52,10 @@ Pre-merge checklist
 Before merging changes, please check the following:
 
 1. Any new plugins have:
-   1.1 Added have a copyright statement attached.
-   1.2 An entry point defined in setup.py.
-   1.3 Been added to the list in ``doc/source/index.rst``
+
+   * A copyright statement attached.
+   * An entry point defined in setup.py.
+   * Been added to the list in ``doc/source/index.rst``
 
 2. Any non-trivial change that is visible to the user should have a note
    in NEWS describing the change.
