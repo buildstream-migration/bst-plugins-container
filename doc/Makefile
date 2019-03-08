@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   = python3 -m sphinx
 PAPER         =
 BUILDDIR      = build
 
@@ -14,19 +14,6 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-# Fix for when python is mapped to python2 not python3
-# This is an issue in the sphinx-build script provided in the default install
-# because it uses the generic python env, so we need to have a copy of this script
-# but with an explicit call to python3.
-#
-# Why python3? We are using some features of sphinx that are only implemented
-# currently in python3
-#
-PYV=$(shell python -c "import sys;t='{v[0]}'.format(v=list(sys.version_info[:2]));sys.stdout.write(t)")
-
-ifeq ($(PYV), 2)
-	SPHINXBUILD = ./sphinx-build3
-endif
 
 .PHONY: all templates html devhelp
 
@@ -64,8 +51,8 @@ endef
 # We set PYTHONPATH here because source/conf.py sys.modules hacks don't seem to help sphinx-build import the plugins
 all: html devhelp
 
-# Generate rst templates for the docs using a mix of sphinx-apidoc and
-# our 'plugin-doc-skeleton' routine for plugin pages.
+# Generate rst templates for the docs using our 'plugin-doc-skeleton' routine
+# for plugin pages.
 templates:
 	mkdir -p source/elements
 	mkdir -p source/sources
