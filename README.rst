@@ -4,6 +4,12 @@ BuildStream Container Plugins
 .. image:: https://gitlab.com/BuildStream/bst-plugins-container/badges/master/pipeline.svg
    :target: https://gitlab.com/BuildStream/bst-plugins-container/commits/master
 
+.. image:: https://img.shields.io/pypi/v/bst-plugins-container.svg
+   :target: https://pypi.org/project/bst-plugins-container
+
+.. image:: https://img.shields.io/pypi/pyversions/bst-plugins-container.svg
+   :target: https://pypi.org/project/bst-plugins-container
+
 A collection of plugins for `BuildStream <https://BuildStream.build>`_ that are
 related to containers.
 
