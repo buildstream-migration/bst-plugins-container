@@ -45,4 +45,4 @@ BuildStream project, you will first need to clone the repo to a location
 
 The plugins must be declared in *project.conf*. To do this, please refer
 to BuildStream's
-`Local plugins documentation <https://buildstream.gitlab.io/buildstream/format_project.html#local-plugins>`_.
+`Pip plugins documentation <https://buildstream.gitlab.io/buildstream/format_project.html#pip-plugins>`_.
