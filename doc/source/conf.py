@@ -54,8 +54,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BuildStream-plugins-container'
-copyright = '2018, Codethink Limited'
-author = 'Jonathan Maw'
+copyright = '2018, The BuildStream Contributors'
+author = 'The BuildStream Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
