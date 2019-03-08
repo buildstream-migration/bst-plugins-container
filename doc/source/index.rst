@@ -10,7 +10,7 @@ API guarantees that we expect of core BuildStream plugins.
 
 To use one of these plugins in your project you need to have installed the
 bst-external package and enabled it in your `project configuration file
-<https://buildstream.gitlab.io/buildstream/projectconf.html#plugin-origins-and-versions>`_.
+<https://docs.buildstream.build/format_project.html#external-plugins>`_.
 
 .. Commented-out because we don't have any elements yet
    .. toctree::
