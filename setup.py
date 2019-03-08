@@ -32,7 +32,26 @@ setup(
     name='bst-plugins-container',
     version="0.1.0",
     description="A collection of BuildStream plugins that are to do with containers.",
+    author='BuildStream Developers',
+    author_email='buildstream-list@gnome.org',
     license='LGPL',
+    classifiers=[
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
+        'Operating System :: POSIX',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Software Development :: Build Tools'
+    ],
+    project_urls={
+        'Source': 'https://gitlab.com/BuildStream/bst-plugins-container',
+        'Documentation': 'https://buildstream.gitlab.io/bst-plugins-container/',
+        'Tracker': 'https://gitlab.com/BuildStream/bst-plugins-container/issues',
+        'Mailing List': 'https://mail.gnome.org/mailman/listinfo/buildstream-list'
+    },
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
     install_requires=[
