@@ -53,7 +53,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'BuildStream-plugins-container'
+project = 'BuildStream Container Plugins'
 copyright = '2018, The BuildStream Contributors'
 author = 'The BuildStream Contributors'
 

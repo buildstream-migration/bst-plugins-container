@@ -1,7 +1,7 @@
 .. toctree::
    :maxdepth: 2
 
-BuildStream-plugins-container Documentation
+BuildStream Container Plugins Documentation
 ===========================================
 
 This is a collection of plugins that are either tailored to a very specific use
