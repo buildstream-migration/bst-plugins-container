@@ -16,8 +16,8 @@ BuildStream Container Plugins
 A collection of plugins for `BuildStream <https://BuildStream.build>`_ that are
 related to containers.
 
-How to use this repo
-====================
+Usage
+=====
 
 There are two ways to use external BuildStream plugins, either as a submodule,
 or as a Python package. See BuildStream's
