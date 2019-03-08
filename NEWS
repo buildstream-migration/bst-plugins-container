@@ -7,3 +7,4 @@ bst-plugins-container 0.1.0
 ===========================
 
   o Migrated the docker plugin to bst-plugins-container from bst-external.
+  o bst-plugins-container released on PyPI.
