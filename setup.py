@@ -18,6 +18,7 @@
 #  Authors:
 #        Tristan Maat <jonathan.maw@codethink.co.uk>
 
+import os
 import sys
 
 try:
@@ -28,10 +29,19 @@ except ImportError:
           "pip (pip3 install setuptools).")
     sys.exit(1)
 
+#####################################################
+#     Prepare package description from README       #
+#####################################################
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                       'README.rst')) as readme:
+    long_description = readme.read()
+
 setup(
     name='bst-plugins-container',
     version="0.1.0",
-    description="A collection of BuildStream plugins that are to do with containers.",
+    description="A collection of BuildStream plugins that are related to containers.",
+    long_description=long_description,
+    long_description_content_type='text/x-rst; charset=UTF-8',
     author='BuildStream Developers',
     author_email='buildstream-list@gnome.org',
     license='LGPL',
