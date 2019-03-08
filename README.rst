@@ -35,9 +35,8 @@ to BuildStream's
 Using the plugins locally within a project
 ------------------------------------------
 To use the container plugins locally within a
-`BuildStream <https://gitlab.com/BuildStream/buildstream>`_
-project, you will first need to clone the repo to a location **within your
-project**::
+BuildStream project, you will first need to clone the repo to a location
+**within your project**::
 
     git clone https://gitlab.com/BuildStream/bst-plugins-container.git
 
