@@ -50,7 +50,7 @@ lint:
   <<: *tox
   variables:
     <<: *tox-variables
-    TOXENV: flake8
+    TOXENV: flake8 rst-lint
 
 docs:
   <<: *tox
