@@ -18,7 +18,9 @@
 #        Sam Thursfield <sam.thursfield@codethink.co.uk>
 #        Chandan Singh <csingh43@bloomberg.net>
 
-"""A source implementation for pulling from Docker Registry instances.
+"""
+docker - stage files from Docker images
+=======================================
 
 **Usage:**
 
