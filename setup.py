@@ -16,7 +16,7 @@
 #  License along with this library. If not, see <http://www.gnu.org/licenses/>.
 #
 #  Authors:
-#        Tristan Maat <jonathan.maw@codethink.co.uk>
+#        Jonathan Maw <jonathan.maw@codethink.co.uk>
 
 import os
 import sys
