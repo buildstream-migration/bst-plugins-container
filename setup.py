@@ -87,7 +87,6 @@ setup(
         ],
         'doc': [
             'sphinx',
-            'sphinx-click',
             'sphinx_rtd_theme'
          ],
     },
