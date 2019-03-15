@@ -13,6 +13,9 @@ BuildStream Container Plugins
 .. image:: https://img.shields.io/badge/Documentation-yellow.svg?logo=gitlab&labelColor=grey
    :target: https://buildstream.gitlab.io/bst-plugins-container
 
+.. image:: https://img.shields.io/badge/Source-teal.svg?logo=gitlab&labelColor=grey
+   :target: https://gitlab.com/BuildStream/bst-plugins-container
+
 A collection of plugins for `BuildStream <https://BuildStream.build>`_ that are
 related to containers.
 
