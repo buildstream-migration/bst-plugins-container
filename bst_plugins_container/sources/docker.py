@@ -296,7 +296,7 @@ class DockerSource(Source):
         # a nicer warning.
         self.node_validate(node, ['registry-url', 'image', 'ref', 'track', 'url'] + Source.COMMON_CONFIG_KEYS)
 
-        if self.node_has_member(node, 'url'):
+        if 'url' in node:
             raise SourceError("{}: 'url' parameter is now deprecated, "
                               "use 'registry-url' and 'image' instead.".format(self))
 
@@ -304,7 +304,7 @@ class DockerSource(Source):
         self.original_registry_url = self.node_get_member(node, str, 'registry-url', _DOCKER_HUB_URL)
         self.registry_url = self.translate_url(self.original_registry_url)
 
-        if self.node_has_member(node, 'ref'):
+        if 'ref' in node:
             self.digest = self._ref_to_digest(self.node_get_member(node, str, 'ref'))
         else:
             self.digest = None
