@@ -33,6 +33,6 @@ Pre-release checklist
 2. Check any new plugins have an entrypoint in setup.py.
 3. Create a new release number in NEWS.
 4. Update the version in setup.py
-5. Update the variables ``version`` and ``release`` in ``doc/source/conf.py``
+5. Update the ``version`` variable in ``doc/source/conf.py``
 6. Create and push an annotated tag for this version, containing all the
    items from the latest NEWS entry.
