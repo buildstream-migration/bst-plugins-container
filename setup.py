@@ -66,7 +66,6 @@ setup(
     include_package_data=True,
     install_requires=[
         'requests',
-        'setuptools'
     ],
     package_data={
         'buildstream': [
