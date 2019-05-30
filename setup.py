@@ -75,6 +75,7 @@ setup(
     entry_points={
         'buildstream.plugins': [
             'docker = bst_plugins_container.sources.docker',
+            'docker_image = bst_plugins_container.elements.docker_image',
         ]
     },
     extras_require={

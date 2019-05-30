@@ -1,0 +1,21 @@
+config:
+  exposed-ports: []
+
+  # TODO can we integrate buildstream environment variables with env
+  env: []
+
+  entrypoint: []
+
+  cmd: []
+
+  volumes: []
+
+  working-dir: '/'
+
+  healthcheck:
+    tests: []
+    interval: 0
+    timeout: 0
+    retries: 0
+
+  repositories: []
