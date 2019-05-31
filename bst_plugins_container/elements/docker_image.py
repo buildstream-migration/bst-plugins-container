@@ -1,11 +1,10 @@
 from buildstream import Element, Scope, ElementError
-from datetime import datetime
+from buildstream.utils import _magic_timestamp
 import os
 import tarfile
 import hashlib
 import json
-
-BLOCK_SIZE = 8192
+from stat import *
 
 
 class DockerElement(Element):
@@ -56,6 +55,7 @@ class DockerElement(Element):
         :param node:
         :return:
         """
+
         for variable, expected_type in self.config_vars.items():
             if type(expected_type) is dict:
                 inner_node = self.node_get_member(node, dict, self._snake_case_to_kebab_case(variable))
@@ -63,7 +63,6 @@ class DockerElement(Element):
             else:
                 setattr(self, variable, self.node_get_member(node, expected_type,
                                                              self._snake_case_to_kebab_case(variable), None))
-                self.exposed_ports = self.node_get_member(node, list, 'exposed-ports')
 
     def _parse_dict_node_member(self, node, config):
         parsed_dict = {}
@@ -84,7 +83,6 @@ class DockerElement(Element):
         return '-'.join(string.split('_'))
 
     def preflight(self):
-
         # assert exposed ports are valid
         port_options = ['tcp', 'udp']
         for port in self.exposed_ports:
@@ -118,54 +116,59 @@ class DockerElement(Element):
         pass
 
     def assemble(self, sandbox):
-        """Assemble the output artifact
 
-        Args:
-           sandbox (:class:`.Sandbox`): The build sandbox
-
-        Returns:
-           (str): An absolute path within the sandbox to collect the artifact from
-
-        Raises:
-           (:class:`.ElementError`): When the element raises an error
-
-        Elements must implement this method to create an output
-        artifact from its sources and dependencies.
-        """
         basedir = sandbox.get_directory()
         inputdir = os.path.join(basedir, 'input')
-        outputdir = os.path.join(basedir, 'output')
+        outputdir = os.path.join(basedir, 'tmp')
+        imagedir = os.path.join(basedir, 'image')
+
         os.makedirs(inputdir, exist_ok=True)
         os.makedirs(outputdir, exist_ok=True)
+        os.makedirs(imagedir, exist_ok=True)
 
         # Stage deps in the sandbox root
         with self.timed_activity('Staging dependencies', silent_nested=True):
             self.stage_dependency_artifacts(sandbox, Scope.BUILD, path='/input')
 
-        # layer digest at index 0 is the base index
+        # `layer_digest[0]` is the base layer, `layer_digest[n]` is the nth layer from the bottom
         layer_digests = []
 
         with self.timed_activity('Creating Layer', silent_nested=True):
             layer_digests.append(self._create_layer(inputdir, outputdir))
 
         with self.timed_activity('Creating Image Configuration', silent_nested=True):
-            config_digest = self._create_image_config(outputdir, layer_digests)
-            self.image_id = config_digest
+            image_id = self._create_image_config(outputdir, layer_digests)
 
         with self.timed_activity('Create Repository File', silent_nested=True):
             self._create_repositories_file(outputdir, layer_digests[0])
 
         with self.timed_activity('Create Manifest', silent_nested=True):
-            self._create_manifest(outputdir, layer_digests, config_digest)
+            self._create_manifest(outputdir, layer_digests, image_id)
 
-        return '/output'
+        with self.timed_activity('Pack Image', silent_nested=True):
+            self._pack_image(outputdir, imagedir)
+
+        return '/image'
+
+    def _pack_image(self, outputdir, imagedir):
+        """ tars `outputdir` to create the docker-image, which is then placed in `image_dir`
+
+        :param outputdir: location of all untared docker-image files
+        :param imagedir: location to place tared docker-image
+        """
+
+        # Tar contents of output dir to generate image
+        tar_name = os.path.join(imagedir, "image.tar")
+        mode = 'w'
+        with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
+            for f in os.listdir(outputdir):
+                tar_handle.add(os.path.join(outputdir, f), arcname=f)
 
     def _create_repositories_file(self, outputdir, top_layer_digest):
-        """
+        """ creates a repository file which contains all of the image's tags
 
         :param outputdir:
         :param top_layer_digest:
-        :return:
         """
 
         repositories = {}
@@ -175,12 +178,11 @@ class DockerElement(Element):
         self._save_json(repositories, os.path.join(outputdir, 'repositories'))
 
     def _create_manifest(self, outputdir, layer_digests, config_digest):
-        """
+        """ creates the image manifest
 
         :param outputdir:
         :param layer_digests:
         :param config_digest:
-        :return:
         """
         manifest = [{
             'Config': config_digest + ".json",
@@ -191,13 +193,12 @@ class DockerElement(Element):
 
         self._save_json(manifest, os.path.join(outputdir, 'manifest.json'))
 
-    # todo worth implementing as virtual files rather than using tmp?
     def _create_image_config(self, outputdir, layer_digests):
         """ creates image configuration file
 
         :param outputdir: directory to place
         :param layer_digests:
-        :return:
+        :return: the hex-digest of the hash of the config (a.k.a. image digest)
         """
         image_config = {
             'config': {
@@ -214,13 +215,13 @@ class DockerElement(Element):
         tmp_image_config = os.path.join(outputdir, 'tmp')
         self._save_json(image_config, tmp_image_config)
 
-        # calculate hash of image_
-        hash_algorithm, image_hash = self._hash_digest(tmp_image_config)
-        final_image_config = os.path.join(outputdir, image_hash + '.json')
+        # calculate hash of image
+        image_digest = self._hash_digest(tmp_image_config)[1]
+        final_image_config = os.path.join(outputdir, image_digest + '.json')
 
         os.rename(tmp_image_config, final_image_config)
 
-        return image_hash
+        return image_digest
 
     def _create_layer(self, rfs_dir, output_dir):
         """creates the following file structure for the provided rfs_dir at the output_dir
@@ -239,12 +240,17 @@ class DockerElement(Element):
         # Create layer tar
         tmp_layer_dir = os.path.join(output_dir, 'tmp')
         os.makedirs(tmp_layer_dir, exist_ok=True)
-
         tar_name = os.path.join(tmp_layer_dir, 'layer.tar')
         mode = 'w'
+
+        def set_tar_headers(tarinfo):
+            tarinfo.uname = tarinfo.gname = 'buildstream'
+            tarinfo.mtime = _magic_timestamp
+            return tarinfo
+
         with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
             for f in os.listdir(rfs_dir):
-                tar_handle.add(os.path.join(rfs_dir, f), arcname=f)
+                tar_handle.add(os.path.join(rfs_dir, f), arcname=f, recursive=True, filter=set_tar_headers)
 
         # Calculate hash
         hash_algorithm, hash_digest = self._hash_digest(tar_name)
@@ -258,7 +264,6 @@ class DockerElement(Element):
             version_handle.write('1.0')
 
         # Create json file
-        # todo test backward compatibility ?
         v1_json = {
             'id': hash_digest,
             'checksum': "tarsum.v1+" + hash_algorithm + ":" + hash_digest,
@@ -291,12 +296,16 @@ class DockerElement(Element):
 
     @staticmethod
     def _save_json(body, file_location):
-        # todo remove whitespaces
+        """creates file at `file_location` and writes `body` to the file
+
+        :param body:
+        :param file_location:
+        """
         with open(file_location, 'w+') as file_handle:
             json.dump(body, file_handle)
 
     @staticmethod
-    def _read_file_block(file_handle, chunk_size=BLOCK_SIZE):
+    def _read_file_block(file_handle, block_size=8192):
         """ yield chunk_size blocks of file
 
         :param file_handle: handle to file
@@ -304,7 +313,7 @@ class DockerElement(Element):
         :return: block of file
         """
         while True:
-            data = file_handle.read(chunk_size)
+            data = file_handle.read(block_size)
             if not data:
                 break
             else:
