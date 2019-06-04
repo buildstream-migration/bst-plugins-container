@@ -67,11 +67,6 @@ setup(
     install_requires=[
         'requests',
     ],
-    package_data={
-        'buildstream': [
-            'bst_plugins_container/elements/**.yaml'
-        ]
-    },
     entry_points={
         'buildstream.plugins': [
             'docker = bst_plugins_container.sources.docker',

@@ -5,6 +5,8 @@ import docker
 from buildstream.testing.runcli import cli_integration as cli
 from buildstream.testing.integration import integration_cache
 from buildstream.testing._utils.site import HAVE_SANDBOX
+from datetime import datetime
+from dateutil import parser
 
 pytestmark = pytest.mark.integration
 
@@ -17,7 +19,6 @@ DATA_DIR = os.path.join(
 @pytest.mark.datafiles(DATA_DIR)
 @pytest.mark.skipif(not HAVE_SANDBOX, reason='Only available with a functioning sandbox')
 def test_single_build_dep_docker_image(cli, datafiles, tmp_path):
-
     # build image
     project = os.path.join(datafiles.dirname, datafiles.basename)
     hello_exec = os.path.join(project, 'files', 'hello-world-image-fs', 'hello')
@@ -45,6 +46,12 @@ def test_single_build_dep_docker_image(cli, datafiles, tmp_path):
     output = client.containers.run(tag).decode('utf-8')
     with open(os.path.join(project, 'files', 'hello-world_output.txt'), 'r') as expected_output:
         assert output == expected_output.read()
+
+    # check meta-data of image
+    image_attrs = client.images.get(tag).attrs
+    date_created = parser.parse(image_attrs['Created'])
+    assert date_created.date() == datetime.now().date()
+    assert image_attrs['Author'] == 'Buildtream docker_image plugin'
 
 
 def _parse_docker_load_output(result):

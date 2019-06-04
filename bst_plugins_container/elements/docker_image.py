@@ -2,6 +2,7 @@ from buildstream import Element, Scope, ElementError
 from buildstream.utils import _magic_timestamp
 import os
 import tarfile
+from datetime import datetime
 import hashlib
 import json
 from stat import *
@@ -49,11 +50,14 @@ class DockerElement(Element):
         self.volumes = {volume: {} for volume in self.volumes}
         self.repositories = {repo[0]: repo[1] for repo in [repo.split(':') for repo in self.repositories]}
 
+        # Set Headers
+        self.created = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+        self.author = 'Buildtream docker_image plugin'
+
     def _parse_yaml(self, node):
         """
         ALWAYS USE API NOT INNER METHODS
         :param node:
-        :return:
         """
 
         for variable, expected_type in self.config_vars.items():
@@ -200,7 +204,10 @@ class DockerElement(Element):
         :param layer_digests:
         :return: the hex-digest of the hash of the config (a.k.a. image digest)
         """
+
         image_config = {
+            'created': self.created,
+            'author': self.author,
             'config': {
                 self._snake_case_to_CamelCase(attr): getattr(self, attr)
                 for attr in self.config_vars.keys()
@@ -266,6 +273,8 @@ class DockerElement(Element):
         # Create json file
         v1_json = {
             'id': hash_digest,
+            'created': self.created,
+            'author': self.author,
             'checksum': "tarsum.v1+" + hash_algorithm + ":" + hash_digest,
             'config': {
                 self._snake_case_to_CamelCase(attr): getattr(self, attr)
