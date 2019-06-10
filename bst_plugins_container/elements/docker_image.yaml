@@ -4,7 +4,7 @@ config:
 
   env: []
 
-  entrypoint: []
+  entry-point: []
 
   cmd: []
 
@@ -12,10 +12,10 @@ config:
 
   working-dir: '/'
 
-  healthcheck:
-    tests: []
+  health-check:
+    tests: ["NONE"]
     interval: 0
     timeout: 0
     retries: 0
 
-  repositories: []
+  image-names: []

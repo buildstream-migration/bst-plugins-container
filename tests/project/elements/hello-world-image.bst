@@ -1,8 +1,11 @@
 kind: docker_image
-
+description: creates an image out of hello-world file system with added config
 config:
-  cmd: ['/hello']
-  env: ['PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin']
-  repositories: ['hello-world-bst:latest']
+  cmd:
+   - /hello
+  env:
+  - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  image-names:
+  - hello-world-bst:latest
 build-depends:
  - hello-world.bst
