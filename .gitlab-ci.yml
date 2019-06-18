@@ -11,7 +11,7 @@ stages:
 .tox-template: &tox
   stage: test
   before_script:
-    - pip3 install --upgrade pip tox tox-venv
+    - pip3 install --upgrade pip tox
     - useradd -Um buildstream
     - chown -R buildstream:buildstream .
   script:
