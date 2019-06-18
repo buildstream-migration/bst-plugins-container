@@ -36,12 +36,6 @@ tests-py36:
 tests-py35:
   <<: *tox
   image: python:3.5-stretch
-  script:
-    # Plugins behave weirdly inside tox on Python 3.5 only. To further the
-    # weirdness, the tests work fine when preparing the environment separately
-    # from running tests.
-    - su buildstream -c sh -c 'tox --notest'
-    - su buildstream -c tox
   variables:
     <<: *tox-variables
     TOXENV: py35
