@@ -1,12 +1,7 @@
 from buildstream.testing import cli     # noqa: F401
+
 import pytest
-
-
-#
-# This file is loaded by pytest, we use it to add a custom
-# `--integration` option to our test suite, and to install
-# a session scope fixture.
-#
+import docker
 
 
 #################################################
@@ -29,3 +24,10 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "docker" in item.keywords:
             item.add_marker(docker_tests)
+
+#################################################
+#               Implement fixtures              #
+#################################################
+@pytest.fixture(scope="session")
+def docker_client():
+    return docker.from_env()

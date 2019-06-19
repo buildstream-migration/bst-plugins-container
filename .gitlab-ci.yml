@@ -15,8 +15,11 @@ stages:
     - useradd -Um buildstream
     - chown -R buildstream:buildstream .
   script:
-    - su buildstream -c tox
+    - su buildstream -c 'tox -- --docker'
+  services:
+    - name: docker:dind
   variables: &tox-variables
+    DOCKER_HOST: tcp://docker:2375/
     PY_COLORS: 1
     PYTEST_ADDOPTS: '--color=yes'
 

@@ -1,22 +1,14 @@
 from datetime import datetime
-import docker
 import hashlib
 import os
 import pytest
 import tarfile
-
-pytestmark = pytest.mark.docker
 
 READ_WRITE_USER_PERMISSION = 0o755
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'project'
 )
-
-
-@pytest.fixture(scope="session")
-def docker_client():
-    return docker.from_env()
 
 
 @pytest.mark.datafiles(DATA_DIR)
@@ -39,6 +31,7 @@ def test_correct_checksum_docker_image(cli, datafiles, tmp_path):
             assert os.path.basename(layer) == _hash_digest(os.path.join(layer, 'layer.tar'))
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_single_build_dep_docker_image(cli, docker_client, datafiles, tmp_path):
     test_element = 'hello-world-image.bst'
@@ -60,6 +53,7 @@ def test_single_build_dep_docker_image(cli, docker_client, datafiles, tmp_path):
     _check_meta_data(docker_client, tag)
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_multiple_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     test_element = 'multiple-deps.bst'
@@ -74,6 +68,7 @@ def test_multiple_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     assert len(image_attrs['RootFS']['Layers']) == 3
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_nested_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     test_element = 'nested-deps.bst'
@@ -88,6 +83,7 @@ def test_nested_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     assert len(image_attrs['RootFS']['Layers']) == 1
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_diamond_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     test_element = 'diamond-deps.bst'
@@ -106,6 +102,7 @@ def test_diamond_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     _no_file_duplications(layer_files)
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
     test_element = 'nested-overwrite.bst'
