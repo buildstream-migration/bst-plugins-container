@@ -80,7 +80,7 @@ def test_nested_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     _check_meta_data(docker_client, tag)
 
     image_attrs = docker_client.images.get(tag).attrs
-    assert len(image_attrs['RootFS']['Layers']) == 1
+    assert len(image_attrs['RootFS']['Layers']) == 2
 
 
 @pytest.mark.docker
@@ -113,9 +113,8 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
     tag = _load_image(docker_client, checkout_dir)
     _check_meta_data(docker_client, tag)
 
-    # check that there is only a single layer
     image_attrs = docker_client.images.get(tag).attrs
-    assert len(image_attrs['RootFS']['Layers']) == 1
+    assert len(image_attrs['RootFS']['Layers']) == 2
 
     # assert that file is indeed overwritten
     extract_path = _untar(checkout_dir)
@@ -129,6 +128,43 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
                 assert produced_file.read() == actual_file.read()
     except FileNotFoundError:
         assert False
+
+
+@pytest.mark.docker
+@pytest.mark.datafiles(DATA_DIR)
+def test_share_layers_docker_image(docker_client, cli, datafiles, tmp_path):
+    """
+        We have the following dependency graphs:
+
+        (1) multiple-deps.bst
+            |-> layer1.bst
+            |-> layer2.bst
+            |-> layer3.bst
+
+        (2) nested-deps.bst -> layer2-nest.bst -|
+            |                                   V
+            |------------------------->layer1.bst
+
+        Test that both images share the layer associated with layer1.bst
+    """
+    test_element1 = 'nested-overwrite.bst'
+    test_element2 = 'multiple-deps.bst'
+    project = str(datafiles)
+    checkout_dir = os.path.join(str(tmp_path), 'checkout')
+    checkout_dir1 = os.path.join(checkout_dir, 'test1')
+    checkout_dir2 = os.path.join(checkout_dir, 'test2')
+
+    _build_and_checkout(test_element1, checkout_dir1, cli, project)
+    _build_and_checkout(test_element2, checkout_dir2, cli, project)
+
+    tag1 = _load_image(docker_client, checkout_dir1)
+    tag2 = _load_image(docker_client, checkout_dir2)
+
+    fs1 = docker_client.images.get(tag1).attrs['RootFS']['Layers']
+    fs2 = docker_client.images.get(tag2).attrs['RootFS']['Layers']
+
+    # one of the layers should be shared
+    assert len(set(fs1).intersection(set(fs2))) == 1
 
 
 def _get_layer_files(extract_path):

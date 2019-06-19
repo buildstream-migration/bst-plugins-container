@@ -6,3 +6,4 @@ config:
   - nested-overwrite-bst:latest
 build-depends:
 - layer2-overwrite.bst
+- layer1.bst

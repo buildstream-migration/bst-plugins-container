@@ -6,3 +6,4 @@ config:
   - nested-deps-bst:latest
 build-depends:
 - layer2-nested.bst
+- layer1.bst
