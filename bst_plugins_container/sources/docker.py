@@ -276,6 +276,8 @@ class DockerRegistryV2Client():
 
 class DockerSource(Source):
 
+    BST_FORMAT_VERSION = 1
+
     # Docker identifies images by a content digest calculated from the image's
     # manifest. This corresponds well with the concept of a 'ref' in
     # BuildStream. However, Docker theoretically supports multiple hash
