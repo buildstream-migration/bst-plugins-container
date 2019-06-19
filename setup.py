@@ -84,10 +84,6 @@ setup(
             'pytest-xdist',
             'pytest >= 3.1.0'
         ],
-        'doc': [
-            'sphinx',
-            'sphinx_rtd_theme'
-         ],
     },
     zip_safe=False
 )  # eof setup()

@@ -341,3 +341,10 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 autodoc_member_order = 'bysource'
+
+
+# -- Custom chnages -------------------------------------------------------
+
+# Mock imports of external dependencies
+
+autodoc_mock_imports = ['buildstream']
