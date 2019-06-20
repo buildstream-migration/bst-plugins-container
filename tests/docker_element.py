@@ -66,6 +66,7 @@ def test_multiple_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 3
+    _test_no_file_duplication(_get_layer_files(_untar(checkout_dir)))
 
 
 @pytest.mark.docker
@@ -81,6 +82,7 @@ def test_nested_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 2
+    _test_no_file_duplication(_get_layer_files(_untar(checkout_dir)))
 
 
 @pytest.mark.docker
@@ -99,7 +101,7 @@ def test_diamond_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     # assert that there is no file duplication
     layer_files = _get_layer_files(_untar(checkout_dir))
-    _no_file_duplications(layer_files)
+    _test_no_file_duplication(layer_files)
 
 
 @pytest.mark.docker
@@ -118,6 +120,7 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
 
     # assert that file is indeed overwritten
     extract_path = _untar(checkout_dir)
+    assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 2
     for layer in os.listdir(extract_path):
         if os.path.isdir(os.path.join(extract_path, layer)):
             with tarfile.open(os.path.join(extract_path, layer, 'layer.tar'), 'r') as tar_handle:
@@ -184,8 +187,16 @@ def _untar(checkout_dir, artifact_name='image.tar'):
     return extract_path
 
 
-def _no_file_duplications(layer_files):
-    assert len(layer_files) == 1 or len(set.intersection(*layer_files)) == 0
+def _get_number_of_file_duplications(layer_files):
+    duplicated_files = set()
+    for i, layer_a in enumerate(layer_files):
+        for layer_b in layer_files[i + 1:]:
+            duplicated_files |= layer_a & layer_b
+    return len(duplicated_files)
+
+
+def _test_no_file_duplication(layer_files):
+    assert _get_number_of_file_duplications(layer_files) == 0
 
 
 def _build_and_checkout(test_element, checkout_dir, cli, project):
