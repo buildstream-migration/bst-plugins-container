@@ -26,56 +26,6 @@ the docker_image element *must* have at least one build dependency.
 The element *must not* have any run-time dependencies.
 Plugin provides `config` options to modify container-runtime configurations.
 
-config options
---------------
-exposed-ports:
-A list of ports to expose from a container running this image,
-Its values can be in the format of:
-- "port/tcp"
-- "port/udp"
-- "port"
-
-env:
-List of environment variables for the container
-in the format of VARNAME="var value"
-
-entry-point:
-A list of arguments to use as the command to execute when the container starts.
-
-cmd:
-Default arguments to the entry point of the container.
-If an entry-point value is not specified, then the first entry
-of the list should be interpreted as the executable to run.
-
-volumes:
-A list of directories which should be created as data volumes in a container running this image
-
-working-dir:
-Directory to set the current working directory of the entry point process in the container.
-
-health-check:
-A dictionary for the test to perform to determine whether the container is healthy.
-Contains fields:
-- tests:
-The test to perform to check that the container is healthy. The options are:
-["NONE"] : disable health-check
-["CMD", arg1, arg2, ...] : exec arguments directly
-["CMD-SHELL", command] : run command with system's default shell
-The test command should exit with a status of 0 if the container is healthy, or with 1 if it is unhealthy.
-
-- interval
-Number of nanoseconds to wait between probe attempts.
-
-- timeout
-Number of nanoseconds to wait before considering the check to have hung.
-
-- retries:
-The number of consecutive failures needed to consider a container as unhealthy.
-
-image-names:
-A list of names that reference the created image. Must follow docker repository naming conventions.
-
-
 The default configuration is as such:
   .. literalinclude:: ../../bst_plugins_containers/elements/import.yaml
      :language: yaml
