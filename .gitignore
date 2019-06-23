@@ -15,4 +15,5 @@ __pycache__
 
 # Generated documentation files
 /doc/build/
+/doc/source/elements/
 /doc/source/sources/
