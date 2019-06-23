@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+SPHINXOPTS    = -W		# turn warnings into errors
 SPHINXBUILD   = python3 -m sphinx
 PAPER         =
 BUILDDIR      = build
