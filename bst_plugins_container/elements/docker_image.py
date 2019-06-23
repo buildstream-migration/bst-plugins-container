@@ -18,16 +18,20 @@
 #
 
 """
-docker_image - Produce Docker image artifact
-============================================
-docker_image produces a Docker image based on its build dependencies.
-As the element creates a layer for each of its dependencies,
-the docker_image element *must* have at least one build dependency.
-The element *must not* have any run-time dependencies.
-Plugin provides `config` options to modify container-runtime configurations.
+docker_image - Produce Docker images
+====================================
+``docker_image`` element produces a Docker image based on its build
+dependencies.
+
+As the element creates a layer for each of its dependencies, the ``docker_image``
+element *must* have at least one build dependency.  The element *must not* have
+any run-time dependencies.
+
+This plugin provides the following ``config`` options to modify
+container-runtime configurations.
 
 The default configuration is as such:
-  .. literalinclude:: ../../bst_plugins_containers/elements/import.yaml
+  .. literalinclude:: ../../../bst_plugins_container/elements/docker_image.yaml
      :language: yaml
 """
 
