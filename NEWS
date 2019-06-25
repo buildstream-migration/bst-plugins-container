@@ -3,6 +3,12 @@ Next Version
 ============
 
 ===========================
+bst-plugins-container 0.2.2
+===========================
+
+  o Add yaml config to distribution package.
+
+===========================
 bst-plugins-container 0.2.1
 ===========================
 
@@ -12,7 +18,7 @@ bst-plugins-container 0.2.1
 bst-plugins-container 0.2.0
 ===========================
 
-  o Added docker_image plugin to generate docker images.
+  o Add docker_image plugin to generate docker images.
 
 ===========================
 bst-plugins-container 0.1.2
