@@ -62,11 +62,12 @@ setup(
         'Tracker': 'https://gitlab.com/BuildStream/bst-plugins-container/issues',
         'Mailing List': 'https://mail.gnome.org/mailman/listinfo/buildstream-list'
     },
-    packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
     install_requires=[
         'requests',
     ],
+    package_dir={'': 'src'},
+    packages=find_packages(where='src', exclude=('tests', 'tests.*')),
     entry_points={
         'buildstream.plugins': [
             'docker = bst_plugins_container.sources.docker',

@@ -1,1 +1,1 @@
-include bst_plugins_container/elements/*.yaml
+include src/bst_plugins_container/elements/*.yaml

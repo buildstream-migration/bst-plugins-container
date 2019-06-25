@@ -31,7 +31,7 @@ This plugin provides the following ``config`` options to modify
 container-runtime configurations.
 
 The default configuration is as such:
-  .. literalinclude:: ../../../bst_plugins_container/elements/docker_image.yaml
+  .. literalinclude:: ../../../src/bst_plugins_container/elements/docker_image.yaml
      :language: yaml
 """
 

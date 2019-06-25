@@ -56,15 +56,15 @@ all: html devhelp
 templates:
 	mkdir -p source/elements
 	mkdir -p source/sources
-	$(call plugin-doc-skeleton,$(CURDIR)/../bst_plugins_container,elements)
-	$(call plugin-doc-skeleton,$(CURDIR)/../bst_plugins_container,sources)
+	$(call plugin-doc-skeleton,$(CURDIR)/../src/bst_plugins_container,elements)
+	$(call plugin-doc-skeleton,$(CURDIR)/../src/bst_plugins_container,sources)
 
 # Targets which generate docs with sphinx build
 #
 #
 html devhelp: templates
 	@echo "Building $@..."
-	PYTHONPATH=$(CURDIR)/../bst_plugins_container \
+	PYTHONPATH=$(CURDIR)/../src/bst_plugins_container \
 	    $(SPHINXBUILD) -b $@ $(ALLSPHINXOPTS) "$(BUILDDIR)/$@" \
 	    $(wildcard source/*.rst) \
 	    $(wildcard source/elements/*.rst) \
