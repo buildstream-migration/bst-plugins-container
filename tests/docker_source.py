@@ -19,7 +19,7 @@ def test_docker_fetch(cli, datafiles):
 def test_docker_source_checkout(cli, datafiles):
     project = os.path.join(datafiles.dirname, datafiles.basename)
     checkout = os.path.join(cli.directory, 'checkout')
-    result = cli.run(project=project, args=['source', 'checkout', '--fetch', 'dockerhub-alpine.bst', checkout])
+    result = cli.run(project=project, args=['source', 'checkout', 'dockerhub-alpine.bst', checkout])
     result.assert_success()
     # Rather than make assertions about the whole Alpine Linux image, verify
     # that the /etc/os-release file exists as a sanity check.
