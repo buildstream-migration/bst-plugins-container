@@ -123,7 +123,7 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
 
     # assert that file is indeed overwritten
     extract_path = _untar(checkout_dir)
-    assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 1
+    assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 2
 
     # check overwritten file is content is as expected
     container = docker_client.containers.create(tag, command='/bin/sh')
