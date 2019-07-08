@@ -47,7 +47,7 @@ def test_single_build_dep_docker_image(cli, docker_client, datafiles, tmp_path):
 
     # compare output of docker run
     output = docker_client.containers.run(tag).decode('utf-8')
-    with open(os.path.join(project, 'files', 'hello-world_output.txt'), 'r') as expected_output:
+    with open(os.path.join(project, 'files', 'hello-world_output.txt')) as expected_output:
         assert output == expected_output.read()
 
     _check_meta_data(docker_client, tag)
@@ -182,7 +182,7 @@ def _get_layer_files(extract_path):
     layer_files = []
     for layer in os.listdir(extract_path):
         if os.path.isdir(os.path.join(extract_path, layer)):
-            with tarfile.open(os.path.join(extract_path, layer, 'layer.tar'), 'r') as tar_handle:
+            with tarfile.open(os.path.join(extract_path, layer, 'layer.tar')) as tar_handle:
                 layer_files.append(tar_handle.getmembers())
     # extract file name from tar_info
     return [set([member.name for member in tar_info]) for tar_info in layer_files]
@@ -190,7 +190,7 @@ def _get_layer_files(extract_path):
 
 def _untar(checkout_dir, artifact_name='image.tar'):
     extract_path = os.path.join(os.path.dirname(checkout_dir), 'image_extract')
-    with tarfile.open(os.path.join(checkout_dir, artifact_name), 'r') as tar_handle:
+    with tarfile.open(os.path.join(checkout_dir, artifact_name)) as tar_handle:
         tar_handle.extractall(path=extract_path)
     return extract_path
 
