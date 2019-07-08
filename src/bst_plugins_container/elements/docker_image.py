@@ -335,9 +335,14 @@ class DockerElement(Element):
                 return tarinfo
 
             with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
-                for f in os.listdir(changeset_dir):
-                    tar_handle.add(os.path.join(changeset_dir, f), arcname=f, recursive=True,
-                                   filter=set_tar_headers)
+                for root, _, files in os.walk(changeset_dir):
+                    rel_root = image_root = os.path.relpath(root, changeset_dir)
+                    if rel_root == '.':
+                        image_root = '/'
+                    for file_ in sorted(files):
+                        path = os.path.join(changeset_dir, rel_root, file_)
+                        image_path = os.path.join(image_root, file_)
+                        tar_handle.add(path, arcname=image_path, filter=set_tar_headers)
 
             # Calculate hash
             hash_digest = self._hash_digest(tar_name)

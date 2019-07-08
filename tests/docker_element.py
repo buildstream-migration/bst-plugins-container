@@ -110,6 +110,9 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
     test_element = 'nested-overwrite.bst'
     project = str(datafiles)
     checkout_dir = os.path.join(str(tmp_path), 'checkout')
+    container_fs_export_dir = os.path.join(str(tmp_path), 'fs_extract')
+    exported_tar = os.path.join(container_fs_export_dir, 'image.tar')
+    os.makedirs(container_fs_export_dir)
 
     _build_and_checkout(test_element, checkout_dir, cli, project)
     tag = _load_image(docker_client, checkout_dir)
@@ -120,14 +123,19 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
 
     # assert that file is indeed overwritten
     extract_path = _untar(checkout_dir)
-    assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 2
-    for layer in os.listdir(extract_path):
-        if os.path.isdir(os.path.join(extract_path, layer)):
-            with tarfile.open(os.path.join(extract_path, layer, 'layer.tar'), 'r') as tar_handle:
-                tar_handle.extractall(path=extract_path)
+    assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 1
+
+    # check overwritten file is content is as expected
+    container = docker_client.containers.create(tag, command='/bin/sh')
+    with open(exported_tar, 'wb+') as tar_handle:
+        for chunk in container.export():
+            tar_handle.write(chunk)
+    with tarfile.open(exported_tar) as tar_handle:
+        tar_handle.extractall(path=container_fs_export_dir)
+
     try:
-        with open(os.path.join(extract_path, 'layer1', 'hello.txt'), 'r') as produced_file:
-            with open(os.path.join(project, 'files', 'layers', 'layer2', 'hello.txt'), 'r') as actual_file:
+        with open(os.path.join(container_fs_export_dir, 'layer1', 'hello.txt')) as produced_file:
+            with open(os.path.join(project, 'files', 'layers', 'layer2', 'hello.txt')) as actual_file:
                 assert produced_file.read() == actual_file.read()
     except FileNotFoundError:
         assert False
