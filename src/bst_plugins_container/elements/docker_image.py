@@ -43,7 +43,7 @@ import re
 import tarfile
 
 from buildstream import Element, Scope, ElementError
-from buildstream.utils import _magic_timestamp, move_atomic
+from buildstream.utils import BST_ARBITRARY_TIMESTAMP, move_atomic
 
 
 class DockerElement(Element):
@@ -331,7 +331,7 @@ class DockerElement(Element):
 
             def set_tar_headers(tarinfo):
                 tarinfo.uname = tarinfo.gname = 'buildstream'
-                tarinfo.mtime = _magic_timestamp
+                tarinfo.mtime = BST_ARBITRARY_TIMESTAMP
                 return tarinfo
 
             with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
