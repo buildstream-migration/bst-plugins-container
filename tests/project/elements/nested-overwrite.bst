@@ -3,7 +3,7 @@ description: creates an image out of three shell scripts
 
 config:
   image-names:
-  - nested-overwrite-bst:latest
+  - bst-plugins-container-tests/nested-overwrite-bst:latest
 build-depends:
 - layer2-overwrite.bst
 - layer1.bst

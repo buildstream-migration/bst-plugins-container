@@ -31,3 +31,12 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session")
 def docker_client():
     return docker.from_env()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def teardown_generated_test_images(docker_client):
+    yield
+    images = docker_client.images.list('bst-plugins-container-tests/*')
+    # delete generated images from host Docker registry
+    for image_id in map(lambda image: image.id.split(':')[1], images):
+        docker_client.images.remove(image_id, force=True)
