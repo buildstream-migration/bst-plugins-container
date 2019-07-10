@@ -38,7 +38,7 @@ with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),
 
 setup(
     name='bst-plugins-container',
-    version="0.2.2",
+    version="0.2.3",
     description="A collection of BuildStream plugins that are related to containers.",
     long_description=long_description,
     long_description_content_type='text/x-rst; charset=UTF-8',

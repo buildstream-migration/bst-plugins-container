@@ -3,6 +3,13 @@ Next Version
 ============
 
 ===========================
+bst-plugins-container 0.2.3
+===========================
+
+  o Fix docker_image plugin bugs.
+  o Remove generated Docker images after running tests.
+
+===========================
 bst-plugins-container 0.2.2
 ===========================
 
