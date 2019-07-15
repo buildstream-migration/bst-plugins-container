@@ -448,18 +448,62 @@ class DockerSource(Source):
                 blob_path = os.path.join(mirror_dir, layer_digest + '.tar.gz')
 
                 self._verify_blob(blob_path, expected_digest=layer_digest)
+                extract_fileset, white_out_fileset = self._get_extract_and_remove_files(blob_path)
 
-                def tar_filter(info):
-                    return not (info.isdev() or info.name.startswith('dev/'))
+                # remove files associated with whiteouts
+                for white_out_file in white_out_fileset:
+                    white_out_file = os.path.join(directory, white_out_file)
+                    os.remove(white_out_file)
 
+                # extract files for the current layer
                 with tarfile.open(blob_path, tarinfo=ReadableTarInfo) as tar:
-                    members = filter(tar_filter, tar.getmembers())
                     with self.tempdir() as td:
-                        tar.extractall(path=td, members=members)
+                        tar.extractall(path=td, members=extract_fileset)
                         link_files(td, directory)
 
         except (OSError, SourceError, tarfile.TarError) as e:
             raise SourceError("{}: Error staging source: {}".format(self, e)) from e
+
+    @staticmethod
+    def _get_extract_and_remove_files(layer_tar_path):
+        """Return the set of files to remove and extract for a given layer
+
+        :param layer_tar_path: The path where a layer has been extracted
+        :return: Tuple of filesets
+          - extract_fileset: files to extract into staging directory
+          - delete_fileset: files to remove from staging directory as the current layer
+            contains a whiteout corresponding to a staged file in the previous layers
+
+        """
+        def strip_wh(white_out_file):
+            """Strip the prefixing .wh. for given file
+
+            :param white_out_file: path of file
+            :return: path without white-out prefix
+            """
+            # whiteout files have the syntax of `*/.wh.*`
+            file_name = os.path.basename(white_out_file)
+            path = os.path.join(os.path.dirname(white_out_file), file_name.split(".wh.")[1])
+            return path
+
+        def is_regular_file(info):
+            """Check if file is a non-device file
+
+            :param info: tar member metadata
+            :return: if the file is a non-device file
+            """
+            return not (info.name.startswith('dev/') or info.isdev())
+
+        with tarfile.open(layer_tar_path) as tar:
+            extract_fileset = []
+            delete_fileset = []
+            for member in tar.getmembers():
+                if os.path.basename(member.name).startswith('.wh.'):
+                    delete_fileset.append(strip_wh(member.name))
+                elif is_regular_file(member):
+                    extract_fileset.append(member)
+
+        return extract_fileset, delete_fileset
 
     def get_consistency(self):
         mirror_dir = self.get_mirror_directory()
