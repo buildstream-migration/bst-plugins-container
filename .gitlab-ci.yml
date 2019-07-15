@@ -1,4 +1,4 @@
-image: python:3.7-stretch
+image: python:3.7-alpine
 
 stages:
   - test
@@ -11,8 +11,9 @@ stages:
 .tox-template: &tox
   stage: test
   before_script:
+    - apk add --no-cache git make
     - pip3 install --upgrade pip tox
-    - useradd -Um buildstream
+    - adduser -DH buildstream
     - chown -R buildstream:buildstream .
   script:
     - su buildstream -c 'tox -- --docker'
@@ -31,14 +32,14 @@ tests-py37:
 
 tests-py36:
   <<: *tox
-  image: python:3.6-stretch
+  image: python:3.6-alpine
   variables:
     <<: *tox-variables
     TOXENV: py36
 
 tests-py35:
   <<: *tox
-  image: python:3.5-stretch
+  image: python:3.5-alpine
   variables:
     <<: *tox-variables
     TOXENV: py35
