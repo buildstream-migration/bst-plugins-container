@@ -78,3 +78,12 @@ pages:
     - public/
   only:
   - master
+
+release:
+  stage: post
+  before_script:
+    - pip3 install --upgrade pip tox
+  script:
+    - tox -e release
+  only:
+    - tags
