@@ -4,7 +4,7 @@ __pycache__
 # Build metadata
 /build/
 /dist/
-/*.egg-info
+*.egg-info
 .eggs
 
 # Test detritus
