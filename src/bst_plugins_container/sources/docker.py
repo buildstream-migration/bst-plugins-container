@@ -296,24 +296,24 @@ class DockerSource(Source):
     def configure(self, node):
         # url is deprecated, but accept it as a valid key so that we can raise
         # a nicer warning.
-        self.node_validate(node, ['registry-url', 'image', 'ref', 'track', 'url'] + Source.COMMON_CONFIG_KEYS)
+        node.validate_keys(['registry-url', 'image', 'ref', 'track', 'url'] + Source.COMMON_CONFIG_KEYS)
 
         if 'url' in node:
             raise SourceError("{}: 'url' parameter is now deprecated, "
                               "use 'registry-url' and 'image' instead.".format(self))
 
-        self.image = self.node_get_member(node, str, 'image')
-        self.original_registry_url = self.node_get_member(node, str, 'registry-url', _DOCKER_HUB_URL)
+        self.image = node.get_str('image')
+        self.original_registry_url = node.get_str('registry-url', _DOCKER_HUB_URL)
         self.registry_url = self.translate_url(self.original_registry_url)
 
         if 'ref' in node:
-            self.digest = self._ref_to_digest(self.node_get_member(node, str, 'ref'))
+            self.digest = self._ref_to_digest(node.get_str('ref'))
         else:
             self.digest = None
-        self.tag = self.node_get_member(node, str, 'track', '') or None
+        self.tag = node.get_str('track', '') or None
 
-        self.architecture = self.node_get_member(node, str, 'architecture', '') or default_architecture()
-        self.os = self.node_get_member(node, str, 'os', '') or default_os()
+        self.architecture = node.get_str('architecture', '') or default_architecture()
+        self.os = node.get_str('os', '') or default_os()
 
         if not (self.digest or self.tag):
             raise SourceError("{}: Must specify either 'ref' or 'track' parameters".format(self))

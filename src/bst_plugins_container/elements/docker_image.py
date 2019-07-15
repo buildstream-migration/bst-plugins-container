@@ -58,7 +58,7 @@ class DockerElement(Element):
     def configure(self, node):
 
         # validate yaml
-        self.node_validate(node, [
+        node.validate_keys([
             'exposed-ports',
             'env',
             'entry-point',
@@ -69,8 +69,8 @@ class DockerElement(Element):
             'image-names'
         ])
 
-        health_check_node = self.node_get_member(node, dict, 'health-check')
-        self.node_validate(health_check_node, [
+        health_check_node = node.get_mapping('health-check')
+        health_check_node.validate_keys([
             'tests',
             'interval',
             'timeout',
@@ -78,19 +78,19 @@ class DockerElement(Element):
         ])
 
         # populate config-variables as attributes
-        self._exposed_ports = self.node_get_member(node, list, 'exposed-ports')
-        self._env = self.node_get_member(node, list, 'env')
-        self._entry_point = self.node_get_member(node, list, 'entry-point')
-        self._cmd = self.node_get_member(node, list, 'cmd')
-        self._volumes = self.node_get_member(node, list, 'volumes')
-        self._working_dir = self.node_get_member(node, str, 'working-dir')
+        self._exposed_ports = node.get_sequence('exposed-ports').as_str_list()
+        self._env = node.get_sequence('env').as_str_list()
+        self._entry_point = node.get_sequence('entry-point').as_str_list()
+        self._cmd = node.get_sequence('cmd').as_str_list()
+        self._volumes = node.get_sequence('volumes').as_str_list()
+        self._working_dir = node.get_str('working-dir')
         self._health_check = {
-            'Tests': self.node_get_member(health_check_node, list, 'tests', default=["NONE"]),
-            'Interval': self.node_get_member(health_check_node, int, 'interval', default=0),
-            'Timeout': self.node_get_member(health_check_node, int, 'timeout', default=0),
-            'Retries': self.node_get_member(health_check_node, int, 'retries', default=0)
+            'Tests': health_check_node.get_sequence('tests', default=["NONE"]).as_str_list(),
+            'Interval': health_check_node.get_int('interval', default=0),
+            'Timeout': health_check_node.get_int('timeout', default=0),
+            'Retries': health_check_node.get_int('retries', default=0)
         }
-        self._image_names = self.node_get_member(node, list, 'image-names')
+        self._image_names = node.get_sequence('image-names').as_str_list()
 
         # Reformat certain lists to dictionary as mandated by Docker image specification
         self._exposed_ports = {port: {} for port in self._exposed_ports}
