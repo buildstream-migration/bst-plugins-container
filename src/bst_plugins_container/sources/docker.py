@@ -274,6 +274,23 @@ class DockerRegistryV2Client():
             shutil.copyfileobj(response.raw, f)
 
 
+class ReadableTarInfo(tarfile.TarInfo):
+    """
+    The goal is to override`TarFile`'s `extractall` semantics by ensuring that on extraction, the
+    files are readable by the owner of the file. This is done by over-riding the accessor for the
+    mode` attribute in `TarInfo`, class that encapsulates the internal meta-data of the tarball,
+    so that the owner-read bit is always set.
+    """
+    @property
+    def mode(self):
+        # ensure file is readable by owner
+        return self.__permission | 0o400
+
+    @mode.setter
+    def mode(self, permission):
+        self.__permission = permission
+
+
 class DockerSource(Source):
 
     BST_FORMAT_VERSION = 1
@@ -435,7 +452,7 @@ class DockerSource(Source):
                 def tar_filter(info):
                     return not (info.isdev() or info.name.startswith('dev/'))
 
-                with tarfile.open(blob_path) as tar:
+                with tarfile.open(blob_path, tarinfo=ReadableTarInfo) as tar:
                     members = filter(tar_filter, tar.getmembers())
                     with self.tempdir() as td:
                         tar.extractall(path=td, members=members)
