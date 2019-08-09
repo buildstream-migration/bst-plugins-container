@@ -35,7 +35,7 @@ The default configuration is as such:
      :language: yaml
 """
 
-from datetime import datetime
+from datetime import datetime, date
 import hashlib
 import json
 import os
@@ -43,7 +43,7 @@ import re
 import tarfile
 
 from buildstream import Element, Scope, ElementError
-from buildstream.utils import BST_ARBITRARY_TIMESTAMP, move_atomic
+from buildstream.utils import move_atomic
 
 
 class DockerElement(Element):
@@ -66,7 +66,8 @@ class DockerElement(Element):
             'volumes',
             'working-dir',
             'health-check',
-            'image-names'
+            'image-names',
+            'timestamp'
         ])
 
         health_check_node = node.get_mapping('health-check')
@@ -84,6 +85,7 @@ class DockerElement(Element):
         self._cmd = node.get_sequence('cmd').as_str_list()
         self._volumes = node.get_sequence('volumes').as_str_list()
         self._working_dir = node.get_str('working-dir')
+        self._timestamp = node.get_str('timestamp')
         self._health_check = {
             'Tests': health_check_node.get_sequence('tests', default=["NONE"]).as_str_list(),
             'Interval': health_check_node.get_int('interval', default=0),
@@ -98,8 +100,17 @@ class DockerElement(Element):
         self._image_names = dict([repo.split(':', 1) for repo in self._image_names])
 
         # Set Headers
-        self._created = "{}Z".format(datetime.utcnow().replace(microsecond=0).isoformat())
         self._author = 'BuildStream docker_image plugin'
+
+    @property
+    def _created(self):
+        if self._timestamp == 'now':
+            return "{}Z".format(datetime.utcnow().replace(microsecond=0).isoformat())
+        elif self._timestamp == 'deterministic':
+            from buildstream.utils import BST_ARBITRARY_TIMESTAMP
+            return "{}T00:00:00Z".format(date.fromtimestamp(BST_ARBITRARY_TIMESTAMP).isoformat())
+        else:
+            return self._timestamp
 
     def preflight(self):
         # assert exposed ports are valid
@@ -128,10 +139,22 @@ class DockerElement(Element):
         # https://docs.docker.com/registry/spec/api/#overview
         repository_syntax = re.compile(r'([a-z0-9][._/-]?)+(:([a-z0-9][._/-]?)+)?')
         for image_name in self._image_names:
-            if not re.fullmatch(repository_syntax, image_name):
+            if not repository_syntax.fullmatch(image_name):
                 raise ElementError("{}: {} image name is not valid"
                                    .format(self, image_name),
                                    reason="docker-bdepend-wrong-count")
+
+        # assert timestamp options are valid
+        timestamp_options = ['now', 'deterministic']
+        if self._timestamp not in timestamp_options:
+            try:
+                iso_format = "%Y-%m-%dT%H:%M:%Sz"
+                datetime.strptime(self._timestamp, iso_format)
+            except ValueError:
+                # does not match specified format
+                raise ElementError("{}: {} timestamp is not valid"
+                                   .format(self, self._timestamp),
+                               reason="docker-wrong-timestamp-format")
 
     def get_unique_key(self):
         return {
@@ -331,7 +354,6 @@ class DockerElement(Element):
 
             def set_tar_headers(tarinfo):
                 tarinfo.uname = tarinfo.gname = 'buildstream'
-                tarinfo.mtime = BST_ARBITRARY_TIMESTAMP
                 return tarinfo
 
             with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:

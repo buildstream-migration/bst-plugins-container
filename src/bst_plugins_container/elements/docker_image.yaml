@@ -31,6 +31,14 @@ config:
   # By default, set to root.
   working-dir: '/'
 
+  # Creation timestamp of image.
+  # The options are:
+  # - now : use the current time stamp on image
+  # - deterministic : use BuildStream's arbitrary timestamp to ensure images are built
+  #                   deterministically
+  # - any ISO-8601 formatted combined date and time. (e.g. 2015-10-31T22:22:54Z)
+  timestamp: now
+
   # A dictionary for the test to perform to determine whether the
   # container is healthy.
   health-check:
