@@ -100,7 +100,6 @@ def hash_digest(_file):
     """return hash digest of file
 
     :param _file: name of file to calculate hash of
-    :param algorithm: hash algorithm that wants to be used
     :return: hash digest of specified file
     """
     hash_algorithm = hashlib.sha256()
