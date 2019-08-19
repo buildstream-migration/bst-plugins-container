@@ -97,6 +97,11 @@ class DockerElement(Element):
         # Reformat certain lists to dictionary as mandated by Docker image specification
         self._exposed_ports = {port: {} for port in self._exposed_ports}
         self._volumes = {volume: {} for volume in self._volumes}
+
+        for i, image in enumerate(self._image_names):
+            if ':' not in image:
+                # enforce a default tag of 'latest'
+                self._image_names[i] = "{}:latest".format(image)
         self._image_names = dict([repo.split(':', 1) for repo in self._image_names])
 
         # Set Headers

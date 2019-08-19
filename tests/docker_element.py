@@ -178,6 +178,32 @@ def test_share_layers_docker_image(docker_client, cli, datafiles, tmp_path):
     assert len(set(fs1).intersection(set(fs2))) == 1
 
 
+@pytest.mark.docker
+@pytest.mark.datafiles(DATA_DIR)
+def test_default_tag(docker_client, cli, datafiles, tmp_path):
+    test_element = 'hello-world-image.bst'
+    project = str(datafiles)
+    checkout_dir = os.path.join(str(tmp_path), 'checkout')
+
+    build_and_checkout(test_element, checkout_dir, cli, project)
+    tag = get_image_tag(load_image(docker_client, checkout_dir))
+
+    assert tag.split(':')[1] == 'latest'
+
+
+@pytest.mark.docker
+@pytest.mark.datafiles(DATA_DIR)
+def test_custom_tag(docker_client, cli, datafiles, tmp_path):
+    test_element = 'diamond-deps.bst'
+    project = str(datafiles)
+    checkout_dir = os.path.join(str(tmp_path), 'checkout')
+
+    build_and_checkout(test_element, checkout_dir, cli, project)
+    tag = get_image_tag(load_image(docker_client, checkout_dir))
+
+    assert tag.split(':')[1] == 'this-is-a-tag'
+
+
 def _get_layer_files(extract_path):
     layer_files = []
     for layer in os.listdir(extract_path):

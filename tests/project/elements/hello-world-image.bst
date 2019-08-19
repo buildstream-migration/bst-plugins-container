@@ -6,6 +6,6 @@ config:
   env:
   - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   image-names:
-  - bst-plugins-container-tests/hello-world-bst:latest
+  - bst-plugins-container-tests/hello-world-bst
 build-depends:
  - hello-world.bst
