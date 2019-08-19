@@ -418,7 +418,8 @@ class DockerElement(Element):
         :param file_location: path of file
         """
         with open(file_location, 'w+') as file_handle:
-            json.dump(body, file_handle)
+            # Order the json. This is because py35 does not preserve insertion order whilst >=py36 does.
+            json.dump(body, file_handle, sort_keys=True)
 
     @staticmethod
     def _read_file_block(file_handle, block_size=8192):
