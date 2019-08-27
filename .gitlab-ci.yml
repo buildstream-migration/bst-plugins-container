@@ -1,4 +1,10 @@
-image: python:3.7-stretch
+image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-78573898
+
+# Given limited CI resources we use various linux distribution images as proxies for the various
+# python versions. The following is the mapping between python versions and the respective linux distributions:
+# fedora:30 -> py37
+# ubuntu:18 -> py36
+# debian:9  -> py35
 
 stages:
   - test
@@ -10,18 +16,15 @@ stages:
 
 .tox-template: &tox
   stage: test
-  before_script:
-    - pip3 install --upgrade pip tox
-    - useradd -Um buildstream
-    - chown -R buildstream:buildstream .
   script:
-    - su buildstream -c 'tox -- --docker'
+    - tox -- --docker
   services:
     - name: docker:dind
   variables: &tox-variables
     DOCKER_HOST: tcp://docker:2375/
     PY_COLORS: 1
     PYTEST_ADDOPTS: '--color=yes'
+    DOCKER_TLS_CERTDIR: ""
 
 tests-py37:
   <<: *tox
@@ -31,14 +34,14 @@ tests-py37:
 
 tests-py36:
   <<: *tox
-  image: python:3.6-stretch
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-78779247
   variables:
     <<: *tox-variables
     TOXENV: py36
 
 tests-py35:
   <<: *tox
-  image: python:3.5-stretch
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-78779247
   variables:
     <<: *tox-variables
     TOXENV: py35
@@ -55,7 +58,7 @@ docs:
     <<: *tox-variables
     TOXENV: docs
   script:
-    - su buildstream -c tox
+    - tox
     - mv doc/build/html public
   artifacts:
     paths:
