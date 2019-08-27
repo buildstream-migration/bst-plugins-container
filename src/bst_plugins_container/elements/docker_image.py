@@ -353,7 +353,7 @@ class DockerElement(Element):
             mode = 'w'
 
             def set_tar_headers(tarinfo):
-                tarinfo.uname = tarinfo.gname = 'buildstream'
+                tarinfo.uid = tarinfo.gid = 0
                 return tarinfo
 
             with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
