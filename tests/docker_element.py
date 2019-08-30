@@ -1,7 +1,8 @@
 from datetime import datetime
 import os
-import pytest
 import tarfile
+
+import pytest
 
 from tests.utils import build_and_checkout, untar, load_image, get_image_tag, hash_digest
 

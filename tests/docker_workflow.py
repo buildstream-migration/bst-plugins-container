@@ -1,8 +1,8 @@
 import filecmp
 import json
 import os
-import pytest
 
+import pytest
 from ruamel.yaml import YAML
 
 from tests.utils import build_and_checkout, push_image, load_image, untar, get_docker_host
