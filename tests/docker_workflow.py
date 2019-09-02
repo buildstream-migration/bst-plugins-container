@@ -16,10 +16,8 @@ DATA_DIR = os.path.join(
 @pytest.mark.datafiles(DATA_DIR)
 def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp_path):
     """
-    Check that when a file system f is built into a single layered Docker image I
-    using the docker_image element plugin and pushed to a registry, when I is later
-    imported using the docker source plugin to produce a file system f', the contents
-    of f and f' are identical.
+    Check that creating a docker_image from a base filesystem, and reimporting
+    this image as a docker_source results in the same filesystem.
     """
 
     project = str(datafiles)
@@ -95,9 +93,8 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
 @pytest.mark.datafiles(DATA_DIR)
 def test_image_equality(cli, datafiles, docker_client, tmp_path):
     """
-    Check that when an image I is imported using the docker source plugin to produce a
-    file system fs, and fs is later built into a Docker image I', the contents of I
-    and I' are identical.
+    Check that the filesystem of a rebuilt image built from an imported third-party image,
+    results in the filesystem of the third-party image.
     """
     project = str(datafiles)
     yaml = YAML()
