@@ -20,7 +20,7 @@ def test_correct_checksum_docker_image(cli, datafiles, tmp_path):
     checkout_dir = os.path.join(str(tmp_path), 'checkout')
 
     build_and_checkout(test_element, checkout_dir, cli, project)
-    extract_path = untar(checkout_dir)
+    extract_path = untar(os.path.join(checkout_dir, 'image.tar'))
 
     # check config file is correctly named
     config_json = [file for file in os.listdir(extract_path)
@@ -68,7 +68,7 @@ def test_multiple_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 3
-    _test_no_file_duplication(_get_layer_files(untar(checkout_dir)))
+    _test_no_file_duplication(_get_layer_files(untar(os.path.join(checkout_dir, 'image.tar'))))
 
 
 @pytest.mark.docker
@@ -84,7 +84,7 @@ def test_nested_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 2
-    _test_no_file_duplication(_get_layer_files(untar(checkout_dir)))
+    _test_no_file_duplication(_get_layer_files(untar(os.path.join(checkout_dir, 'image.tar'))))
 
 
 @pytest.mark.docker
@@ -102,7 +102,7 @@ def test_diamond_deps_docker_image(docker_client, cli, datafiles, tmp_path):
     assert len(image_attrs['RootFS']['Layers']) == 2
 
     # assert that there is no file duplication
-    layer_files = _get_layer_files(untar(checkout_dir))
+    layer_files = _get_layer_files(untar(os.path.join(checkout_dir, 'image.tar')))
     _test_no_file_duplication(layer_files)
 
 
@@ -124,7 +124,7 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
     assert len(image_attrs['RootFS']['Layers']) == 2
 
     # assert that file is indeed overwritten
-    extract_path = untar(checkout_dir)
+    extract_path = untar(os.path.join(checkout_dir, 'image.tar'))
     assert _get_number_of_file_duplications(_get_layer_files(extract_path)) == 2
 
     # check overwritten file is content is as expected

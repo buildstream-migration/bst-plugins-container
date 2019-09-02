@@ -6,13 +6,11 @@ IMAGE_PREFIX = 'bst-plugins-container-tests'
 
 
 def push_image(docker_client, registry_url, image_name):
-    """
-    Pushes image_name to registry
+    """Push image_name to registry
 
     :param docker_client: handle to Docker engine
     :param registry_url: registry to push image to
     :param image_name: name of image to be pushed
-    :return:
     """
     remote_tag = '{}/{}'.format(registry_url, image_name)
     image = docker_client.images.get(image_name)
@@ -23,23 +21,24 @@ def push_image(docker_client, registry_url, image_name):
         raise Exception("Image {} was not pushed to {}".format(image_name, registry_url))
 
 
-def untar(path, artifact_name='image.tar'):
-    """
-    Untars a tarball and returns extract path
+def untar(tar_path, extract_path=None):
+    """Untar a tarball and return extraction path
 
-    :param path: directory of tarball
-    :param artifact_name: name of tarball
+    :param tar_path: path of tarball
+    :param extract_path: path of tar-extraction
     :return: path of where the tarball has been extracted to
     """
-    extract_path = os.path.join(os.path.dirname(path), 'image_extract')
-    with tarfile.open(os.path.join(path, artifact_name)) as tar_handle:
+    if extract_path is None:
+        tar_dir, tar_file = os.path.split(tar_path)
+        tar_name, _ = os.path.splitext(tar_file)
+        extract_path = os.path.join(tar_dir, tar_name)
+    with tarfile.open(tar_path) as tar_handle:
         tar_handle.extractall(path=extract_path)
     return extract_path
 
 
 def build_and_checkout(test_element, checkout_dir, cli, project):
-    """
-    Builds and checkouts specified element
+    """Build and checkout specified element
 
     :param test_element: name of element to build and checkout
     :param checkout_dir: directory of checkout
@@ -56,8 +55,7 @@ def build_and_checkout(test_element, checkout_dir, cli, project):
 
 
 def load_image(docker_client, path, artifact_name='image.tar'):
-    """
-    Loads a docker image to the Docker daemon. Equivalent to `docker load` command.
+    """Load a Docker image to the Docker daemon. Equivalent to `docker load` command.
 
     :param docker_client: handle to Docker engine
     :param path: directory of image tarball
@@ -72,8 +70,7 @@ def load_image(docker_client, path, artifact_name='image.tar'):
 
 
 def get_image_tag(response):
-    """
-    Parse response from Docker daemon to get tag of image.
+    """Parse response from Docker daemon to get tag of image.
 
     :param response: response from Docker daemon
     :return: Tag of image
@@ -82,8 +79,7 @@ def get_image_tag(response):
 
 
 def get_docker_host(docker_client):
-    """
-    Parse a DockerClient object to get the hostname of the Docker engine
+    """Parse a DockerClient object to get the hostname of the Docker engine
 
     :param docker_client: handle to Docker engine
     :return: hostname of Docker engine
@@ -110,7 +106,7 @@ def hash_digest(_file):
 
 
 def _read_file_block(file_handle, block_size=8192):
-    """yield chunk_size blocks of file
+    """Yield chunk_size blocks of file
 
     :param file_handle: handle to file
     :param chunk_size: block size of file to be read

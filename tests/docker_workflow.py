@@ -152,11 +152,11 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
     build_and_checkout(hello_world_rebuild, rebuilt_image_checkout_dir, cli, project)
 
     # get layer filesystem
-    untar_dir = untar(rebuilt_image_checkout_dir)
+    untar_dir = untar(os.path.join(rebuilt_image_checkout_dir, 'image.tar'))
     layer_dir = \
         [os.path.join(untar_dir, layer_dir) for layer_dir in os.listdir(untar_dir)
          if os.path.isdir(os.path.join(untar_dir, layer_dir))][0]
-    layer_untar_dir = untar(layer_dir, 'layer.tar')
+    layer_untar_dir = untar(os.path.join(layer_dir, 'layer.tar'))
 
     # assert file systems are equal and have the same contents
     _compare_directory_files(layer_untar_dir, hello_world_checkout_dir)
