@@ -45,22 +45,16 @@ def docker_client():
 
 @pytest.fixture(autouse=True, scope="session")
 def teardown_generated_test_images(docker_client):
-    start_images = set(docker_client.images.list())
     yield
-    end_images = set(docker_client.images.list())
-    # delete generated images from host Docker registry
-    images_to_delete = end_images.difference(start_images)
-    for image_id in map(lambda image: image.id.split(':')[1], images_to_delete):
+    # delete generated images from bst-plugins-container-tests
+    for image_id in map(lambda image: image.id, docker_client.images.list(name='bst-plugins-container-tests/*')):
         docker_client.images.remove(image_id, force=True)
-    assert start_images == set(docker_client.images.list())
 
 
 @pytest.fixture(scope="session")
-def docker_registry(docker_client, teardown_generated_test_images):
+def docker_registry(docker_client):
     """
-    This fixture returns the address and port for the engine to reach the registry.
-    Depends on teardown_generated_test_images fixture to ensure that images are
-    only cleaned up after this fixture completes.
+    Return address and port for the engine to reach the registry.
     """
     docker_client.images.pull(DOCKER_REGISTRY_IMAGE)
     engine_to_registry = "localhost"  # the hostname the Docker engine addresses the Docker registry service

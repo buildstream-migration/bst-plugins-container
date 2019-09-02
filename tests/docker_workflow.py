@@ -41,7 +41,7 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
     }
     _create_element(yaml, local_fs, local_fs_element, project)
 
-    image_name = 'example-image:latest'
+    image_name = 'example-image'
 
     # create example-image.bst
     example_image = 'example-image.bst'
@@ -49,7 +49,7 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
     example_image_element = {
         'kind': 'docker_image',
         'config': {
-            'image-names': ["{}:latest".format(image_name)],
+            'image-names': ["{}:latest".format(image_name), "bst-plugins-container-tests/{}:latest".format(image_name)]
         },
         'build-depends': [local_fs]
     }
@@ -141,7 +141,7 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
     hello_world_rebuild_element = {
         'kind': 'docker_image',
         'config': {
-            'image-names': ['hello-world-rebuild:latest'],
+            'image-names': ['bst-plugins-container-tests/hello-world-rebuild:latest'],
         },
         'build-depends': [import_hello_world]
     }
