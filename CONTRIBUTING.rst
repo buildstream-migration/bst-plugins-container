@@ -98,12 +98,17 @@ that using the ``-e`` option of ``tox``::
 
     tox -e py37
 
-Linting
--------
-We use `flake8 <http://flake8.pycqa.org>`_ to lint our code. You can run the
-linter like so::
+Coding Style
+------------
+We use `black <https://github.com/psf/black>`_ to format our code. You can run
+`black` like so::
 
-    tox -e flake8
+    tox -e format
+
+The above command will re-format the code and rewrite the files. Instead, if
+you just want to check what would change, use the following command::
+
+    tox -e format-check
 
 To ensure that our reStructuredText (``.rst``) files (like this document) are
 syntactically correct, we use a tool called `restructuredtext-lint
