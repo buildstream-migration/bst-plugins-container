@@ -52,10 +52,9 @@ format-check:
     - tox -e format-check
 
 lint:
-  <<: *tox
-  variables:
-    <<: *tox-variables
-    TOXENV: flake8, rst-lint
+  stage: test
+  script:
+    - tox -e rst-lint
 
 docs:
   <<: *tox

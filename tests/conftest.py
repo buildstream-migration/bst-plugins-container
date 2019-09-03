@@ -1,7 +1,7 @@
 import socket
 import time
 
-from buildstream.testing import cli  # noqa: F401
+from buildstream.testing import cli
 import docker
 import pytest
 
