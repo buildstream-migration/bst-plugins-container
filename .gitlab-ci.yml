@@ -46,6 +46,11 @@ tests-py35:
     <<: *tox-variables
     TOXENV: py35
 
+format-check:
+  stage: test
+  script:
+    - tox -e format-check
+
 lint:
   <<: *tox
   variables:
