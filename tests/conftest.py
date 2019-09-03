@@ -1,7 +1,7 @@
 import socket
 import time
 
-from buildstream.testing import cli     # noqa: F401
+from buildstream.testing import cli  # noqa: F401
 import docker
 import pytest
 
@@ -16,12 +16,18 @@ DOCKER_REGISTRY_PORT = 5000
 
 
 def pytest_addoption(parser):
-    parser.addoption('--docker', action='store_true', default=False,
-                     help='Run tests that require docker daemon running')
+    parser.addoption(
+        "--docker",
+        action="store_true",
+        default=False,
+        help="Run tests that require docker daemon running",
+    )
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "docker: mark test as requiring docker daemon")
+    config.addinivalue_line(
+        "markers", "docker: mark test as requiring docker daemon"
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -32,6 +38,7 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "docker" in item.keywords:
             item.add_marker(docker_tests)
+
 
 #################################################
 #               Implement fixtures              #
@@ -47,7 +54,10 @@ def docker_client():
 def teardown_generated_test_images(docker_client):
     yield
     # delete generated images from bst-plugins-container-tests
-    for image_id in map(lambda image: image.id, docker_client.images.list(name='bst-plugins-container-tests/*')):
+    for image_id in map(
+        lambda image: image.id,
+        docker_client.images.list(name="bst-plugins-container-tests/*"),
+    ):
         docker_client.images.remove(image_id, force=True)
 
 
@@ -57,7 +67,9 @@ def docker_registry(docker_client):
     Return address and port for the engine to reach the registry.
     """
     docker_client.images.pull(DOCKER_REGISTRY_IMAGE)
-    engine_to_registry = "localhost"  # the hostname the Docker engine addresses the Docker registry service
+    engine_to_registry = (
+        "localhost"
+    )  # the hostname the Docker engine addresses the Docker registry service
     engine_url = get_docker_host(docker_client)
 
     container = docker_client.containers.run(
@@ -65,7 +77,7 @@ def docker_registry(docker_client):
         ports={DOCKER_REGISTRY_PORT: DOCKER_REGISTRY_PORT},
         detach=True,
         auto_remove=True,
-        name='registry'
+        name="registry",
     )
 
     try:
@@ -85,4 +97,6 @@ def _wait_for_socket(host, port, seconds):
         else:
             break
     else:
-        raise Exception("timed out waiting for port {}:{} to open".format(host, port))
+        raise Exception(
+            "timed out waiting for port {}:{} to open".format(host, port)
+        )

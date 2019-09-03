@@ -64,32 +64,39 @@ import urllib.parse
 import requests
 
 from buildstream import Source, SourceError, Consistency
-from buildstream.utils import save_file_atomic, sha256sum, link_files, move_atomic
+from buildstream.utils import (
+    save_file_atomic,
+    sha256sum,
+    link_files,
+    move_atomic,
+)
 
-_DOCKER_HUB_URL = 'https://registry.hub.docker.com'
+_DOCKER_HUB_URL = "https://registry.hub.docker.com"
 
 
 def parse_bearer_authorization_challenge(text):
     # Hand-written and probably broken parsing of the Www-Authenticate
     # response. I can't find a built-in way to parse this, but I probably
     # didn't look hard enough.
-    if not text.startswith('Bearer '):
-        raise SourceError("Unexpected Www-Authenticate response: %{}".format(text))
+    if not text.startswith("Bearer "):
+        raise SourceError(
+            "Unexpected Www-Authenticate response: %{}".format(text)
+        )
 
     pairs = {}
-    text = text[len('Bearer '):]
-    for pair in text.split(','):
-        key, value = pair.split('=')
+    text = text[len("Bearer ") :]
+    for pair in text.split(","):
+        key, value = pair.split("=")
         pairs[key] = value[1:-1]
     return pairs
 
 
 def default_architecture():
     machine = platform.machine()
-    if machine == 'x86_64':
-        return 'amd64'
-    elif machine == 'aarch64':
-        return 'arm64'
+    if machine == "x86_64":
+        return "amd64"
+    elif machine == "aarch64":
+        return "arm64"
     else:
         return machine
 
@@ -101,9 +108,9 @@ def default_os():
 # Variant of urllib.parse.urljoin() allowing multiple path components at once.
 def urljoin(url, *args):
     for arg in args:
-        if not url.endswith('/'):
-            url += '/'
-        url = urllib.parse.urljoin(url, arg.lstrip('/'))
+        if not url.endswith("/"):
+            url += "/"
+        url = urllib.parse.urljoin(url, arg.lstrip("/"))
     return url
 
 
@@ -118,37 +125,44 @@ class DockerManifestError(SourceError):
         self.manifest = manifest
 
 
-class DockerRegistryV2Client():
+class DockerRegistryV2Client:
     def __init__(self, endpoint, api_timeout=3):
         self.endpoint = endpoint
         self.api_timeout = api_timeout
 
         self.token = None
 
-    def _request(self, subpath, extra_headers=None, stream=False, _reauthorized=False):
+    def _request(
+        self, subpath, extra_headers=None, stream=False, _reauthorized=False
+    ):
         if not extra_headers:
             extra_headers = {}
 
-        headers = {
-            'content-type': 'application/json',
-        }
+        headers = {"content-type": "application/json"}
         headers.update(extra_headers)
 
         if self.token:
-            headers['Authorization'] = 'Bearer {}'.format(self.token)
+            headers["Authorization"] = "Bearer {}".format(self.token)
 
-        url = urljoin(self.endpoint, 'v2', subpath)
-        response = requests.get(url, headers=headers, stream=stream,
-                                timeout=self.api_timeout)
+        url = urljoin(self.endpoint, "v2", subpath)
+        response = requests.get(
+            url, headers=headers, stream=stream, timeout=self.api_timeout
+        )
 
-        if response.status_code == requests.codes.UNAUTHORIZED and not _reauthorized:
+        if (
+            response.status_code == requests.codes.UNAUTHORIZED
+            and not _reauthorized
+        ):
             # This request requires (re)authorization. See:
             # https://docs.docker.com/registry/spec/auth/token/
-            auth_challenge = response.headers['Www-Authenticate']
+            auth_challenge = response.headers["Www-Authenticate"]
             auth_vars = parse_bearer_authorization_challenge(auth_challenge)
-            self._auth(auth_vars['realm'], auth_vars['service'], auth_vars['scope'])
-            return self._request(subpath, extra_headers=extra_headers,
-                                 _reauthorized=True)
+            self._auth(
+                auth_vars["realm"], auth_vars["service"], auth_vars["scope"]
+            )
+            return self._request(
+                subpath, extra_headers=extra_headers, _reauthorized=True
+            )
         else:
             response.raise_for_status()
 
@@ -160,7 +174,7 @@ class DockerRegistryV2Client():
         request_url = "{}?service={}&scope={}".format(realm, service, scope)
         response = requests.get(request_url, timeout=self.api_timeout)
         response.raise_for_status()
-        self.token = response.json()['token']
+        self.token = response.json()["token"]
 
     # digest():
     #
@@ -174,7 +188,7 @@ class DockerRegistryV2Client():
     def digest(self, content):
         digest_hash = hashlib.sha256()
         digest_hash.update(content)
-        return 'sha256:' + digest_hash.hexdigest()
+        return "sha256:" + digest_hash.hexdigest()
 
     # manifest():
     #
@@ -200,58 +214,96 @@ class DockerRegistryV2Client():
     #
     # Returns:
     #    (str, str): A tuple of the manifest content as text, and its content hash
-    def manifest(self, image_path, reference,
-                 architecture=default_architecture(), os_=default_os()):
-        accept_types = ['application/vnd.docker.distribution.manifest.v2+json',
-                        'application/vnd.docker.distribution.manifest.list.v2+json']
+    def manifest(
+        self,
+        image_path,
+        reference,
+        architecture=default_architecture(),
+        os_=default_os(),
+    ):
+        accept_types = [
+            "application/vnd.docker.distribution.manifest.v2+json",
+            "application/vnd.docker.distribution.manifest.list.v2+json",
+        ]
 
-        manifest_url = urljoin(image_path, 'manifests', urllib.parse.quote(reference))
+        manifest_url = urljoin(
+            image_path, "manifests", urllib.parse.quote(reference)
+        )
         response = self._request(
-            manifest_url, extra_headers={'Accept': ','.join(accept_types)})
+            manifest_url, extra_headers={"Accept": ",".join(accept_types)}
+        )
 
         try:
             manifest = json.loads(response.text)
         except json.JSONDecodeError as e:
-            raise DockerManifestError("Server did not return a valid manifest: {}".format(e),
-                                      manifest=response.text)
+            raise DockerManifestError(
+                "Server did not return a valid manifest: {}".format(e),
+                manifest=response.text,
+            )
 
-        schema_version = manifest.get('schemaVersion')
+        schema_version = manifest.get("schemaVersion")
         if schema_version == 1:
-            raise DockerManifestError("Schema version 1 is unsupported.",
-                                      manifest=response.text)
+            raise DockerManifestError(
+                "Schema version 1 is unsupported.", manifest=response.text
+            )
         elif schema_version is None:
-            raise DockerManifestError("Manifest did not include the schemaVersion key.",
-                                      manifest=response.text)
+            raise DockerManifestError(
+                "Manifest did not include the schemaVersion key.",
+                manifest=response.text,
+            )
 
-        our_digest = self.digest(response.text.encode('utf8'))
-        their_digest = response.headers.get('Docker-Content-Digest')
+        our_digest = self.digest(response.text.encode("utf8"))
+        their_digest = response.headers.get("Docker-Content-Digest")
 
         if not their_digest:
-            raise DockerManifestError("Server did not set the Docker-Content-Digest header.",
-                                      manifest=response.text)
+            raise DockerManifestError(
+                "Server did not set the Docker-Content-Digest header.",
+                manifest=response.text,
+            )
         if our_digest != their_digest:
-            raise DockerManifestError("Server returned a non-matching content digest. "
-                                      "Our digest: {}, their digest: {}".
-                                      format(our_digest, their_digest),
-                                      manifest=response.text)
+            raise DockerManifestError(
+                "Server returned a non-matching content digest. "
+                "Our digest: {}, their digest: {}".format(
+                    our_digest, their_digest
+                ),
+                manifest=response.text,
+            )
 
-        if manifest['mediaType'] == 'application/vnd.docker.distribution.manifest.list.v2+json':
+        if (
+            manifest["mediaType"]
+            == "application/vnd.docker.distribution.manifest.list.v2+json"
+        ):
             # This is a "fat manifest", we need to narrow down to a specific
             # architecture.
-            for sub in manifest['manifests']:
-                if sub['platform']['architecture'] == architecture and sub['platform']['os']:
-                    sub_digest = sub['digest']
-                    return self.manifest(image_path, sub_digest, architecture=architecture, os_=os_)
+            for sub in manifest["manifests"]:
+                if (
+                    sub["platform"]["architecture"] == architecture
+                    and sub["platform"]["os"]
+                ):
+                    sub_digest = sub["digest"]
+                    return self.manifest(
+                        image_path,
+                        sub_digest,
+                        architecture=architecture,
+                        os_=os_,
+                    )
                 else:
                     raise DockerManifestError(
-                        "No images found for architecture {}, OS {}".format(architecture, os_),
-                        manifest=response.text)
-        elif manifest['mediaType'] == 'application/vnd.docker.distribution.manifest.v2+json':
+                        "No images found for architecture {}, OS {}".format(
+                            architecture, os_
+                        ),
+                        manifest=response.text,
+                    )
+        elif (
+            manifest["mediaType"]
+            == "application/vnd.docker.distribution.manifest.v2+json"
+        ):
             return response.text, our_digest
         else:
             raise DockerManifestError(
-                "Unsupported manifest type {}".format(manifest['mediaType']),
-                manifest=response.text)
+                "Unsupported manifest type {}".format(manifest["mediaType"]),
+                manifest=response.text,
+            )
 
     # blob():
     #
@@ -266,11 +318,13 @@ class DockerRegistryV2Client():
     #    blob_digest (str): Content hash of the blob.
     #    download_to (str): Path to a file where the content will be written.
     def blob(self, image_path, blob_digest, download_to):
-        blob_url = urljoin(image_path, 'blobs', urllib.parse.quote(blob_digest))
+        blob_url = urljoin(
+            image_path, "blobs", urllib.parse.quote(blob_digest)
+        )
 
         response = self._request(blob_url, stream=True)
 
-        with save_file_atomic(download_to, 'wb') as f:
+        with save_file_atomic(download_to, "wb") as f:
             shutil.copyfileobj(response.raw, f)
 
 
@@ -281,6 +335,7 @@ class ReadableTarInfo(tarfile.TarInfo):
     mode` attribute in `TarInfo`, class that encapsulates the internal meta-data of the tarball,
     so that the owner-read bit is always set.
     """
+
     @property
     def mode(self):
         # ensure file is readable by owner
@@ -301,39 +356,52 @@ class DockerSource(Source):
     # methods while BuildStream does not. Right now every Docker registry
     # uses sha256 so let's ignore that issue for the time being.
     def _digest_to_ref(self, digest):
-        if digest.startswith('sha256:'):
-            return digest[len('sha256:'):]
+        if digest.startswith("sha256:"):
+            return digest[len("sha256:") :]
         else:
-            method = digest.split(':')[0]
+            method = digest.split(":")[0]
             raise SourceError("Unsupported digest method: {}".format(method))
 
     def _ref_to_digest(self, ref):
-        return 'sha256:' + ref
+        return "sha256:" + ref
 
     def configure(self, node):
         # url is deprecated, but accept it as a valid key so that we can raise
         # a nicer warning.
-        node.validate_keys(['registry-url', 'image', 'ref', 'track', 'url'] + Source.COMMON_CONFIG_KEYS)
+        node.validate_keys(
+            ["registry-url", "image", "ref", "track", "url"]
+            + Source.COMMON_CONFIG_KEYS
+        )
 
-        if 'url' in node:
-            raise SourceError("{}: 'url' parameter is now deprecated, "
-                              "use 'registry-url' and 'image' instead.".format(self))
+        if "url" in node:
+            raise SourceError(
+                "{}: 'url' parameter is now deprecated, "
+                "use 'registry-url' and 'image' instead.".format(self)
+            )
 
-        self.image = node.get_str('image')
-        self.original_registry_url = node.get_str('registry-url', _DOCKER_HUB_URL)
+        self.image = node.get_str("image")
+        self.original_registry_url = node.get_str(
+            "registry-url", _DOCKER_HUB_URL
+        )
         self.registry_url = self.translate_url(self.original_registry_url)
 
-        if 'ref' in node:
-            self.digest = self._ref_to_digest(node.get_str('ref'))
+        if "ref" in node:
+            self.digest = self._ref_to_digest(node.get_str("ref"))
         else:
             self.digest = None
-        self.tag = node.get_str('track', '') or None
+        self.tag = node.get_str("track", "") or None
 
-        self.architecture = node.get_str('architecture', '') or default_architecture()
-        self.os = node.get_str('os', '') or default_os()
+        self.architecture = (
+            node.get_str("architecture", "") or default_architecture()
+        )
+        self.os = node.get_str("os", "") or default_os()
 
         if not (self.digest or self.tag):
-            raise SourceError("{}: Must specify either 'ref' or 'track' parameters".format(self))
+            raise SourceError(
+                "{}: Must specify either 'ref' or 'track' parameters".format(
+                    self
+                )
+            )
 
         self.client = DockerRegistryV2Client(self.registry_url)
 
@@ -346,10 +414,12 @@ class DockerSource(Source):
         return [self.original_registry_url, self.image, self.digest]
 
     def get_ref(self):
-        return None if self.digest is None else self._digest_to_ref(self.digest)
+        return (
+            None if self.digest is None else self._digest_to_ref(self.digest)
+        )
 
     def set_ref(self, ref, node):
-        node['ref'] = ref
+        node["ref"] = ref
         self.digest = self._ref_to_digest(ref)
 
     def track(self):
@@ -357,8 +427,11 @@ class DockerSource(Source):
         if not self.tag:
             return None
 
-        with self.timed_activity("Fetching image manifest for image: '{}:{}' from: {}"
-                                 .format(self.image, self.tag, self.registry_url)):
+        with self.timed_activity(
+            "Fetching image manifest for image: '{}:{}' from: {}".format(
+                self.image, self.tag, self.registry_url
+            )
+        ):
             try:
                 _, digest = self.client.manifest(self.image, self.tag)
             except DockerManifestError as e:
@@ -370,45 +443,62 @@ class DockerSource(Source):
         return self._digest_to_ref(digest)
 
     def _load_manifest(self):
-        manifest_file = os.path.join(self.get_mirror_directory(), self.digest + '.manifest.json')
+        manifest_file = os.path.join(
+            self.get_mirror_directory(), self.digest + ".manifest.json"
+        )
 
-        with open(manifest_file, 'rb') as f:
+        with open(manifest_file, "rb") as f:
             text = f.read()
 
         real_digest = self.client.digest(text)
         if real_digest != self.digest:
-            raise SourceError("Manifest {} is corrupt; got content hash of {}".
-                              format(manifest_file, real_digest))
+            raise SourceError(
+                "Manifest {} is corrupt; got content hash of {}".format(
+                    manifest_file, real_digest
+                )
+            )
 
-        return json.loads(text.decode('utf-8'))
+        return json.loads(text.decode("utf-8"))
 
     def _save_manifest(self, text, path):
-        manifest_file = os.path.join(path, self.digest + '.manifest.json')
-        with save_file_atomic(manifest_file, 'wb') as f:
-            f.write(text.encode('utf-8'))
+        manifest_file = os.path.join(path, self.digest + ".manifest.json")
+        with save_file_atomic(manifest_file, "wb") as f:
+            f.write(text.encode("utf-8"))
 
     def _verify_blob(self, path, expected_digest):
-        blob_digest = 'sha256:' + sha256sum(path)
+        blob_digest = "sha256:" + sha256sum(path)
         if expected_digest != blob_digest:
-            raise SourceError("Blob {} is corrupt; got content hash of {}.".
-                              format(path, blob_digest))
+            raise SourceError(
+                "Blob {} is corrupt; got content hash of {}.".format(
+                    path, blob_digest
+                )
+            )
 
     def fetch(self):
-        with self.timed_activity("Fetching image {}:{} with digest {}".format(self.image, self.tag, self.digest),
-                                 silent_nested=True):
+        with self.timed_activity(
+            "Fetching image {}:{} with digest {}".format(
+                self.image, self.tag, self.digest
+            ),
+            silent_nested=True,
+        ):
             with self.tempdir() as tmpdir:
                 # move all files to a tmpdir
                 try:
                     manifest = self._load_manifest()
                 except FileNotFoundError:
                     try:
-                        manifest_text, digest = self.client.manifest(self.image, self.digest)
+                        manifest_text, digest = self.client.manifest(
+                            self.image, self.digest
+                        )
                     except requests.RequestException as e:
                         raise SourceError(e) from e
 
                     if digest != self.digest:
-                        raise SourceError("Requested image {}, got manifest with digest {}".
-                                          format(self.digest, digest))
+                        raise SourceError(
+                            "Requested image {}, got manifest with digest {}".format(
+                                self.digest, digest
+                            )
+                        )
                     self._save_manifest(manifest_text, tmpdir)
                     manifest = json.loads(manifest_text)
                 except DockerManifestError as e:
@@ -417,16 +507,25 @@ class DockerSource(Source):
                 except (OSError, requests.RequestException) as e:
                     raise SourceError(e) from e
 
-                for layer in manifest['layers']:
-                    if layer['mediaType'] != 'application/vnd.docker.image.rootfs.diff.tar.gzip':
-                        raise SourceError("Unsupported layer type: {}".format(layer['mediaType']))
+                for layer in manifest["layers"]:
+                    if (
+                        layer["mediaType"]
+                        != "application/vnd.docker.image.rootfs.diff.tar.gzip"
+                    ):
+                        raise SourceError(
+                            "Unsupported layer type: {}".format(
+                                layer["mediaType"]
+                            )
+                        )
 
-                    layer_digest = layer['digest']
-                    blob_path = os.path.join(tmpdir, layer_digest + '.tar.gz')
+                    layer_digest = layer["digest"]
+                    blob_path = os.path.join(tmpdir, layer_digest + ".tar.gz")
 
                     if not os.path.exists(blob_path):
                         try:
-                            self.client.blob(self.image, layer_digest, download_to=blob_path)
+                            self.client.blob(
+                                self.image, layer_digest, download_to=blob_path
+                            )
                         except (OSError, requests.RequestException) as e:
                             if os.path.exists(blob_path):
                                 shutil.rmtree(blob_path)
@@ -439,8 +538,12 @@ class DockerSource(Source):
                 # As both the manifest and blobs are content addressable, we can optimize space by having
                 # a flat mirror directory. We check one-by-one if there is any need to copy a file out of the tmpdir.
                 for fetched_file in os.listdir(tmpdir):
-                    move_atomic(os.path.join(tmpdir, fetched_file),
-                                os.path.join(self.get_mirror_directory(), fetched_file))
+                    move_atomic(
+                        os.path.join(tmpdir, fetched_file),
+                        os.path.join(
+                            self.get_mirror_directory(), fetched_file
+                        ),
+                    )
 
     def stage(self, directory):
         mirror_dir = self.get_mirror_directory()
@@ -451,12 +554,14 @@ class DockerSource(Source):
             raise SourceError("Unable to load manifest: {}".format(e)) from e
 
         try:
-            for layer in manifest['layers']:
-                layer_digest = layer['digest']
-                blob_path = os.path.join(mirror_dir, layer_digest + '.tar.gz')
+            for layer in manifest["layers"]:
+                layer_digest = layer["digest"]
+                blob_path = os.path.join(mirror_dir, layer_digest + ".tar.gz")
 
                 self._verify_blob(blob_path, expected_digest=layer_digest)
-                extract_fileset, white_out_fileset = self._get_extract_and_remove_files(blob_path)
+                extract_fileset, white_out_fileset = self._get_extract_and_remove_files(
+                    blob_path
+                )
 
                 # remove files associated with whiteouts
                 for white_out_file in white_out_fileset:
@@ -470,7 +575,9 @@ class DockerSource(Source):
                         link_files(td, directory)
 
         except (OSError, SourceError, tarfile.TarError) as e:
-            raise SourceError("{}: Error staging source: {}".format(self, e)) from e
+            raise SourceError(
+                "{}: Error staging source: {}".format(self, e)
+            ) from e
 
     @staticmethod
     def _get_extract_and_remove_files(layer_tar_path):
@@ -483,6 +590,7 @@ class DockerSource(Source):
             contains a whiteout corresponding to a staged file in the previous layers
 
         """
+
         def strip_wh(white_out_file):
             """Strip the prefixing .wh. for given file
 
@@ -491,7 +599,9 @@ class DockerSource(Source):
             """
             # whiteout files have the syntax of `*/.wh.*`
             file_name = os.path.basename(white_out_file)
-            path = os.path.join(os.path.dirname(white_out_file), file_name.split(".wh.")[1])
+            path = os.path.join(
+                os.path.dirname(white_out_file), file_name.split(".wh.")[1]
+            )
             return path
 
         def is_regular_file(info):
@@ -500,13 +610,13 @@ class DockerSource(Source):
             :param info: tar member metadata
             :return: if the file is a non-device file
             """
-            return not (info.name.startswith('dev/') or info.isdev())
+            return not (info.name.startswith("dev/") or info.isdev())
 
         with tarfile.open(layer_tar_path) as tar:
             extract_fileset = []
             delete_fileset = []
             for member in tar.getmembers():
-                if os.path.basename(member.name).startswith('.wh.'):
+                if os.path.basename(member.name).startswith(".wh."):
                     delete_fileset.append(strip_wh(member.name))
                 elif is_regular_file(member):
                     extract_fileset.append(member)
@@ -522,9 +632,9 @@ class DockerSource(Source):
         try:
             manifest = self._load_manifest()
 
-            for layer in manifest['layers']:
-                layer_digest = layer['digest']
-                blob_path = os.path.join(mirror_dir, layer_digest + '.tar.gz')
+            for layer in manifest["layers"]:
+                layer_digest = layer["digest"]
+                blob_path = os.path.join(mirror_dir, layer_digest + ".tar.gz")
                 try:
                     self._verify_blob(blob_path, expected_digest=layer_digest)
                 except FileNotFoundError:

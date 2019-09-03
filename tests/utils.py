@@ -2,7 +2,7 @@ import hashlib
 import os
 import tarfile
 
-IMAGE_PREFIX = 'bst-plugins-container-tests'
+IMAGE_PREFIX = "bst-plugins-container-tests"
 
 
 def push_image(docker_client, registry_url, image_name):
@@ -12,13 +12,19 @@ def push_image(docker_client, registry_url, image_name):
     :param registry_url: registry to push image to
     :param image_name: name of image to be pushed
     """
-    remote_tag = '{}/{}'.format(registry_url, image_name)
+    remote_tag = "{}/{}".format(registry_url, image_name)
     image = docker_client.images.get(image_name)
     image.tag(remote_tag)
-    response = list(docker_client.images.push(remote_tag, stream=True, decode=True))
+    response = list(
+        docker_client.images.push(remote_tag, stream=True, decode=True)
+    )
     # check that image was pushed by parsing response logs
-    if "Pushed" not in [alert['status'] for alert in response if 'status' in alert.keys()]:
-        raise Exception("Image {} was not pushed to {}".format(image_name, registry_url))
+    if "Pushed" not in [
+        alert["status"] for alert in response if "status" in alert.keys()
+    ]:
+        raise Exception(
+            "Image {} was not pushed to {}".format(image_name, registry_url)
+        )
 
 
 def untar(tar_path, extract_path=None):
@@ -46,15 +52,24 @@ def build_and_checkout(test_element, checkout_dir, cli, project):
     :param project: directory of project
     """
     # build image
-    result = cli.run(project=project, args=['build', test_element])
+    result = cli.run(project=project, args=["build", test_element])
     result.assert_success()
     # checkout image
     os.makedirs(checkout_dir)
-    result = cli.run(project=project, args=['artifact', 'checkout', '--directory', checkout_dir, test_element])
+    result = cli.run(
+        project=project,
+        args=[
+            "artifact",
+            "checkout",
+            "--directory",
+            checkout_dir,
+            test_element,
+        ],
+    )
     result.assert_success()
 
 
-def load_image(docker_client, path, artifact_name='image.tar'):
+def load_image(docker_client, path, artifact_name="image.tar"):
     """Load a Docker image to the Docker daemon. Equivalent to `docker load` command.
 
     :param docker_client: handle to Docker engine
@@ -63,7 +78,7 @@ def load_image(docker_client, path, artifact_name='image.tar'):
     :return: response from Docker daemon
     """
     image_path = str(os.path.join(path, artifact_name))
-    with open(image_path, 'rb') as image_handle:
+    with open(image_path, "rb") as image_handle:
         response = docker_client.images.load(image_handle.read())
         # get first tag of first image
     return response
@@ -84,10 +99,10 @@ def get_docker_host(docker_client):
     :param docker_client: handle to Docker engine
     :return: hostname of Docker engine
     """
-    docker_host_url = docker_client.api.base_url.split('/')[-1]
-    if ':' in docker_host_url:
+    docker_host_url = docker_client.api.base_url.split("/")[-1]
+    if ":" in docker_host_url:
         # strip port
-        return docker_host_url.split(':')[0]
+        return docker_host_url.split(":")[0]
     else:
         return docker_host_url
 
@@ -99,7 +114,7 @@ def hash_digest(_file):
     :return: hash digest of specified file
     """
     hash_algorithm = hashlib.sha256()
-    with open(_file, 'rb') as file_handle:
+    with open(_file, "rb") as file_handle:
         for block in _read_file_block(file_handle):
             hash_algorithm.update(block)
     return hash_algorithm.hexdigest()
@@ -128,5 +143,7 @@ def create_element(yaml, element_name, element_payload, project):
     :param element_payload: dictionary configuration
     :param project: root of project
     """
-    with open(os.path.join(project, 'elements', element_name), 'w') as element_handle:
+    with open(
+        os.path.join(project, "elements", element_name), "w"
+    ) as element_handle:
         yaml.dump(element_payload, element_handle)

@@ -51,120 +51,143 @@ class DockerElement(Element):
     BST_FORBID_RDEPENDS = True
     BST_RUN_COMMANDS = False
     BST_VIRTUAL_DIRECTORY = False
-    IMAGE_SPEC_VERSION = '1.2'
-    LAYER_CONFIG_VERSION = '1.0'
+    IMAGE_SPEC_VERSION = "1.2"
+    LAYER_CONFIG_VERSION = "1.0"
     BST_FORMAT_VERSION = 1
 
     def configure(self, node):
 
         # validate yaml
-        node.validate_keys([
-            'exposed-ports',
-            'env',
-            'entry-point',
-            'cmd',
-            'volumes',
-            'working-dir',
-            'health-check',
-            'image-names',
-            'timestamp'
-        ])
+        node.validate_keys(
+            [
+                "exposed-ports",
+                "env",
+                "entry-point",
+                "cmd",
+                "volumes",
+                "working-dir",
+                "health-check",
+                "image-names",
+                "timestamp",
+            ]
+        )
 
-        health_check_node = node.get_mapping('health-check')
-        health_check_node.validate_keys([
-            'tests',
-            'interval',
-            'timeout',
-            'retries'
-        ])
+        health_check_node = node.get_mapping("health-check")
+        health_check_node.validate_keys(
+            ["tests", "interval", "timeout", "retries"]
+        )
 
         # populate config-variables as attributes
-        self._exposed_ports = node.get_sequence('exposed-ports').as_str_list()
-        self._env = node.get_sequence('env').as_str_list()
-        self._entry_point = node.get_sequence('entry-point').as_str_list()
-        self._cmd = node.get_sequence('cmd').as_str_list()
-        self._volumes = node.get_sequence('volumes').as_str_list()
-        self._working_dir = node.get_str('working-dir')
-        self._timestamp = node.get_str('timestamp')
+        self._exposed_ports = node.get_sequence("exposed-ports").as_str_list()
+        self._env = node.get_sequence("env").as_str_list()
+        self._entry_point = node.get_sequence("entry-point").as_str_list()
+        self._cmd = node.get_sequence("cmd").as_str_list()
+        self._volumes = node.get_sequence("volumes").as_str_list()
+        self._working_dir = node.get_str("working-dir")
+        self._timestamp = node.get_str("timestamp")
         self._health_check = {
-            'Tests': health_check_node.get_sequence('tests', default=["NONE"]).as_str_list(),
-            'Interval': health_check_node.get_int('interval', default=0),
-            'Timeout': health_check_node.get_int('timeout', default=0),
-            'Retries': health_check_node.get_int('retries', default=0)
+            "Tests": health_check_node.get_sequence(
+                "tests", default=["NONE"]
+            ).as_str_list(),
+            "Interval": health_check_node.get_int("interval", default=0),
+            "Timeout": health_check_node.get_int("timeout", default=0),
+            "Retries": health_check_node.get_int("retries", default=0),
         }
-        self._image_names = node.get_sequence('image-names').as_str_list()
+        self._image_names = node.get_sequence("image-names").as_str_list()
 
         # Reformat certain lists to dictionary as mandated by Docker image specification
         self._exposed_ports = {port: {} for port in self._exposed_ports}
         self._volumes = {volume: {} for volume in self._volumes}
 
         for i, image in enumerate(self._image_names):
-            if ':' not in image:
+            if ":" not in image:
                 # enforce a default tag of 'latest'
                 self._image_names[i] = "{}:latest".format(image)
-        self._image_names = dict([repo.split(':', 1) for repo in self._image_names])
+        self._image_names = dict(
+            [repo.split(":", 1) for repo in self._image_names]
+        )
 
         # Set Headers
-        self._author = 'BuildStream docker_image plugin'
+        self._author = "BuildStream docker_image plugin"
 
     @property
     def _created(self):
-        if self._timestamp == 'now':
-            return "{}Z".format(datetime.utcnow().replace(microsecond=0).isoformat())
-        elif self._timestamp == 'deterministic':
+        if self._timestamp == "now":
+            return "{}Z".format(
+                datetime.utcnow().replace(microsecond=0).isoformat()
+            )
+        elif self._timestamp == "deterministic":
             from buildstream.utils import BST_ARBITRARY_TIMESTAMP
-            return "{}T00:00:00Z".format(date.fromtimestamp(BST_ARBITRARY_TIMESTAMP).isoformat())
+
+            return "{}T00:00:00Z".format(
+                date.fromtimestamp(BST_ARBITRARY_TIMESTAMP).isoformat()
+            )
         else:
             return self._timestamp
 
     @property
     def _created_timestamp(self):
-        datetime_object = datetime.strptime(self._created, "%Y-%m-%dT%H:%M:%SZ")
+        datetime_object = datetime.strptime(
+            self._created, "%Y-%m-%dT%H:%M:%SZ"
+        )
         return datetime_object.timestamp()
 
     def preflight(self):
         # assert exposed ports are valid
-        port_options = ['tcp', 'udp']
+        port_options = ["tcp", "udp"]
         for port in self._exposed_ports:
-            if '/' in port:
-                port, port_option = port.split('/', 1)
+            if "/" in port:
+                port, port_option = port.split("/", 1)
                 if port_option not in port_options:
-                    raise ElementError("{}: Invalid port option {}. Options include: {}"
-                                       .format(self, port_option, port_options),
-                                       reason='docker-invalid-port-option')
+                    raise ElementError(
+                        "{}: Invalid port option {}. Options include: {}".format(
+                            self, port_option, port_options
+                        ),
+                        reason="docker-invalid-port-option",
+                    )
             if int(port) > 65535 or int(port) < 0:
-                raise ElementError("{}: Invalid port number {}"
-                                   .format(self, port),
-                                   reason='docker-port-out-out-of-range')
+                raise ElementError(
+                    "{}: Invalid port number {}".format(self, port),
+                    reason="docker-port-out-out-of-range",
+                )
 
         # In order to build a Docker image of something,
         # Docker Element will have to require at least one build dependency
         build_deps = list(self.dependencies(Scope.BUILD, recurse=False))
         if len(build_deps) < 1:
-            raise ElementError("{}: {} element must have at least one build dependency"
-                               .format(self, type(self).__name__),
-                               reason="docker-bdepend-wrong-count")
+            raise ElementError(
+                "{}: {} element must have at least one build dependency".format(
+                    self, type(self).__name__
+                ),
+                reason="docker-bdepend-wrong-count",
+            )
 
         # check image names are valid
         # https://docs.docker.com/registry/spec/api/#overview
-        repository_syntax = re.compile(r'([a-z0-9][._/-]?)+(:([a-z0-9][._/-]?)+)?')
+        repository_syntax = re.compile(
+            r"([a-z0-9][._/-]?)+(:([a-z0-9][._/-]?)+)?"
+        )
         for image_name in self._image_names:
             if not repository_syntax.fullmatch(image_name):
-                raise ElementError("{}: {} image name is not valid"
-                                   .format(self, image_name),
-                                   reason="docker-bdepend-wrong-count")
+                raise ElementError(
+                    "{}: {} image name is not valid".format(self, image_name),
+                    reason="docker-bdepend-wrong-count",
+                )
 
         # assert timestamp options are valid
-        timestamp_options = ['now', 'deterministic']
+        timestamp_options = ["now", "deterministic"]
         if self._timestamp not in timestamp_options:
             try:
                 iso_format = "%Y-%m-%dT%H:%M:%Sz"
                 datetime.strptime(self._timestamp, iso_format)
             except ValueError:
                 # does not match specified format
-                raise ElementError("{}: {} timestamp is not valid"
-                                   .format(self, self._timestamp),
-                               reason="docker-wrong-timestamp-format")
+                raise ElementError(
+                    "{}: {} timestamp is not valid".format(
+                        self, self._timestamp
+                    ),
+                    reason="docker-wrong-timestamp-format",
+                )
 
     def get_unique_key(self):
         return {
@@ -177,7 +200,7 @@ class DockerElement(Element):
             "health-check": self._health_check,
             "image-names": self._image_names,
             "image-spec-version": self.IMAGE_SPEC_VERSION,
-            "layer-config-version": self.LAYER_CONFIG_VERSION
+            "layer-config-version": self.LAYER_CONFIG_VERSION,
         }
 
     def configure_sandbox(self, sandbox):
@@ -190,11 +213,11 @@ class DockerElement(Element):
         basedir = sandbox.get_directory()
 
         # where dependencies will be staged
-        dep_dir = os.path.join(basedir, 'dependencies')
+        dep_dir = os.path.join(basedir, "dependencies")
         # where layers will be built
-        layer_dir = os.path.join(basedir, 'layers')
+        layer_dir = os.path.join(basedir, "layers")
         # where final image will be produced
-        image_dir = os.path.join(basedir, 'image')
+        image_dir = os.path.join(basedir, "image")
 
         # TODO use virtual directory interface to be remote-execution compatible
         os.makedirs(dep_dir)
@@ -202,18 +225,20 @@ class DockerElement(Element):
         os.makedirs(image_dir)
 
         # `layer_digests[0]` is the base layer, `layer_digest[n]` is the nth layer from the bottom
-        layer_digests = [self._create_layer(layer_path, layer_dir) for layer_path in
-                         self._stage_layers(sandbox, dep_dir)]
+        layer_digests = [
+            self._create_layer(layer_path, layer_dir)
+            for layer_path in self._stage_layers(sandbox, dep_dir)
+        ]
 
         # create image level files
         image_id = self._create_image_config(layer_dir, layer_digests)
         self._create_repositories_file(layer_dir, layer_digests[0])
         self._create_manifest(layer_dir, layer_digests, image_id)
 
-        with self.timed_activity('Pack Image', silent_nested=True):
+        with self.timed_activity("Pack Image", silent_nested=True):
             self._pack_image(layer_dir, image_dir)
 
-        return '/image'
+        return "/image"
 
     def _stage_layers(self, sandbox, dep_dir):
         """stage dependencies to element sandbox
@@ -227,7 +252,9 @@ class DockerElement(Element):
         for dependency in self.dependencies(Scope.BUILD, recurse=False):
             # turn each immediate build dependency into a layer
             dep_name = dependency.normal_name
-            with self.timed_activity("Staging {} Layer".format(dep_name), silent_nested=False):
+            with self.timed_activity(
+                "Staging {} Layer".format(dep_name), silent_nested=False
+            ):
                 # create intermediate checkout directory for layer
                 layer_path = os.path.join(dep_dir, dep_name)
                 os.makedirs(layer_path, exist_ok=True)
@@ -251,7 +278,9 @@ class DockerElement(Element):
             for dependency in element.dependencies(Scope.RUN):
                 self._stage_layer(sandbox, layer_path, dependency, visited)
             # add current element's diff-set
-            element.stage_dependency_artifacts(sandbox, Scope.NONE, path=layer_path)
+            element.stage_dependency_artifacts(
+                sandbox, Scope.NONE, path=layer_path
+            )
 
     def _pack_image(self, layer_dir, image_dir):
         """tars `layer_dir` to create the docker-image, which is then placed in `image_dir`
@@ -262,7 +291,7 @@ class DockerElement(Element):
 
         # Tar contents of output dir to generate image
         tar_name = os.path.join(image_dir, "image.tar")
-        mode = 'w'
+        mode = "w"
         with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
             for f in os.listdir(layer_dir):
                 tar_handle.add(os.path.join(layer_dir, f), arcname=f)
@@ -278,7 +307,7 @@ class DockerElement(Element):
             for name, tag in self._image_names.items()
         }
 
-        self._save_json(repositories, os.path.join(outputdir, 'repositories'))
+        self._save_json(repositories, os.path.join(outputdir, "repositories"))
 
     def _create_manifest(self, outputdir, layer_digests, config_digest):
         """creates the image manifest
@@ -287,14 +316,22 @@ class DockerElement(Element):
         :param layer_digests: list of layer digests
         :param config_digest: digest of image
         """
-        manifest = [{
-            'Config': "{}.json".format(config_digest),
-            # ordered bottom-most to top-most layer
-            "Layers": ["{}/layer.tar".format(layer_digest) for layer_digest in layer_digests],
-            "RepoTags": ["{}:{}".format(name, tag) for name, tag in self._image_names.items()]
-        }]
+        manifest = [
+            {
+                "Config": "{}.json".format(config_digest),
+                # ordered bottom-most to top-most layer
+                "Layers": [
+                    "{}/layer.tar".format(layer_digest)
+                    for layer_digest in layer_digests
+                ],
+                "RepoTags": [
+                    "{}:{}".format(name, tag)
+                    for name, tag in self._image_names.items()
+                ],
+            }
+        ]
 
-        self._save_json(manifest, os.path.join(outputdir, 'manifest.json'))
+        self._save_json(manifest, os.path.join(outputdir, "manifest.json"))
 
     def _create_image_config(self, outputdir, layer_digests):
         """creates image configuration file
@@ -305,9 +342,9 @@ class DockerElement(Element):
         """
 
         image_config = {
-            'created': self._created,
-            'author': self._author,
-            'config': {
+            "created": self._created,
+            "author": self._author,
+            "config": {
                 "ExposedPorts": self._exposed_ports,
                 "Env": self._env,
                 "Entrypoint": self._entry_point,
@@ -316,28 +353,30 @@ class DockerElement(Element):
                 "WorkingDir": self._working_dir,
                 "HealthCheck": self._health_check,
             },
-            'rootfs': {
-                'diff_ids': [
+            "rootfs": {
+                "diff_ids": [
                     "sha256:{}".format(layer_digest)
                     for layer_digest in layer_digests
                 ],
-                'type': 'layers'
+                "type": "layers",
             },
-            'history': [
+            "history": [
                 {
                     "created": self._created,
-                    "created_by": "BuildStream Docker Image Plugin"
+                    "created_by": "BuildStream Docker Image Plugin",
                 }
                 for _ in layer_digests
-            ]
+            ],
         }
 
-        tmp_image_config = os.path.join(outputdir, 'tmp')
+        tmp_image_config = os.path.join(outputdir, "tmp")
         self._save_json(image_config, tmp_image_config)
 
         # calculate hash of image
         image_digest = self._hash_digest(tmp_image_config)
-        final_image_config = os.path.join(outputdir, '{}.json'.format(image_digest))
+        final_image_config = os.path.join(
+            outputdir, "{}.json".format(image_digest)
+        )
 
         move_atomic(tmp_image_config, final_image_config)
 
@@ -355,12 +394,15 @@ class DockerElement(Element):
                 :param layer_dir: directory where layer will be built
                 :return: hash_digest of layer
         """
-        with self.timed_activity('Create {} Layer'.format(os.path.basename(changeset_dir)), silent_nested=True):
+        with self.timed_activity(
+            "Create {} Layer".format(os.path.basename(changeset_dir)),
+            silent_nested=True,
+        ):
             # Create layer tar
-            tmp_layer_dir = os.path.join(layer_dir, 'tmp')
+            tmp_layer_dir = os.path.join(layer_dir, "tmp")
             os.makedirs(tmp_layer_dir, exist_ok=True)
-            tar_name = os.path.join(tmp_layer_dir, 'layer.tar')
-            mode = 'w'
+            tar_name = os.path.join(tmp_layer_dir, "layer.tar")
+            mode = "w"
 
             def set_tar_headers(tarinfo):
                 tarinfo.mtime = self._created_timestamp
@@ -369,13 +411,20 @@ class DockerElement(Element):
 
             with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
                 for root, directories, files in os.walk(changeset_dir):
-                    rel_root = image_root = os.path.relpath(root, changeset_dir)
-                    if rel_root == '.':
-                        image_root = '/'
+                    rel_root = image_root = os.path.relpath(
+                        root, changeset_dir
+                    )
+                    if rel_root == ".":
+                        image_root = "/"
                     for file_ in sorted(files + directories):
                         path = os.path.join(changeset_dir, rel_root, file_)
                         image_path = os.path.join(image_root, file_)
-                        tar_handle.add(path, arcname=image_path, filter=set_tar_headers, recursive=False)
+                        tar_handle.add(
+                            path,
+                            arcname=image_path,
+                            filter=set_tar_headers,
+                            recursive=False,
+                        )
 
             # Calculate hash
             hash_digest = self._hash_digest(tar_name)
@@ -385,26 +434,28 @@ class DockerElement(Element):
             move_atomic(tmp_layer_dir, layer_directory)
 
             # Create VERSION file
-            with open(os.path.join(layer_directory, 'VERSION'), "w+") as version_handle:
+            with open(
+                os.path.join(layer_directory, "VERSION"), "w+"
+            ) as version_handle:
                 version_handle.write(self.LAYER_CONFIG_VERSION)
 
             # Create json file
             v1_json = {
-                'id': hash_digest,
-                'created': self._created,
-                'author': self._author,
-                'checksum': "tarsum.v1+sha256:{}".format(hash_digest),
-                'config': {
+                "id": hash_digest,
+                "created": self._created,
+                "author": self._author,
+                "checksum": "tarsum.v1+sha256:{}".format(hash_digest),
+                "config": {
                     "ExposedPorts": self._exposed_ports,
                     "Env": self._env,
                     "EntryPoint": self._entry_point,
                     "Cmd": self._cmd,
                     "Volumes": self._volumes,
                     "WorkingDir": self._working_dir,
-                }
+                },
             }
 
-            self._save_json(v1_json, os.path.join(layer_directory, 'json'))
+            self._save_json(v1_json, os.path.join(layer_directory, "json"))
 
         return hash_digest
 
@@ -416,7 +467,7 @@ class DockerElement(Element):
         :return: hash digest of specified file
         """
         hash_algorithm = hashlib.sha256()
-        with open(file, 'rb') as file_handle:
+        with open(file, "rb") as file_handle:
             for block in self._read_file_block(file_handle):
                 hash_algorithm.update(block)
         return hash_algorithm.hexdigest()
@@ -428,7 +479,7 @@ class DockerElement(Element):
         :param body: payload
         :param file_location: path of file
         """
-        with open(file_location, 'w+') as file_handle:
+        with open(file_location, "w+") as file_handle:
             # Order the json. This is because py35 does not preserve insertion order whilst >=py36 does.
             json.dump(body, file_handle, sort_keys=True)
 
