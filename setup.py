@@ -67,7 +67,7 @@ setup(
         'requests',
     ],
     package_dir={'': 'src'},
-    packages=find_packages(where='src', exclude=('tests', 'tests.*')),
+    packages=find_packages(where='src'),
     entry_points={
         'buildstream.plugins': [
             'docker = bst_plugins_container.sources.docker',
