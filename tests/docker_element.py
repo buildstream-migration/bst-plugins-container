@@ -64,7 +64,6 @@ def test_multiple_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 
     build_and_checkout(test_element, checkout_dir, cli, project)
     tag = get_image_tag(load_image(docker_client, checkout_dir))
-    _check_meta_data(docker_client, tag)
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 3
@@ -118,7 +117,6 @@ def test_nested_overwrite_docker_image(docker_client, cli, datafiles, tmp_path):
 
     build_and_checkout(test_element, checkout_dir, cli, project)
     tag = get_image_tag(load_image(docker_client, checkout_dir))
-    _check_meta_data(docker_client, tag)
 
     image_attrs = docker_client.images.get(tag).attrs
     assert len(image_attrs['RootFS']['Layers']) == 2

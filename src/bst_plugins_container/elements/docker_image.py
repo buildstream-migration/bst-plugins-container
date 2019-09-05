@@ -112,6 +112,11 @@ class DockerElement(Element):
         else:
             return self._timestamp
 
+    @property
+    def _created_timestamp(self):
+        datetime_object = datetime.strptime(self._created, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime_object.timestamp()
+
     def preflight(self):
         # assert exposed ports are valid
         port_options = ['tcp', 'udp']
@@ -353,6 +358,7 @@ class DockerElement(Element):
             mode = 'w'
 
             def set_tar_headers(tarinfo):
+                tarinfo.mtime = self._created_timestamp
                 tarinfo.uid = tarinfo.gid = 0
                 return tarinfo
 
