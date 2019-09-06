@@ -64,7 +64,7 @@ import urllib.parse
 import requests
 
 from buildstream import Source, SourceError, Consistency
-from buildstream.utils import save_file_atomic, sha256sum, link_files
+from buildstream.utils import save_file_atomic, sha256sum, link_files, move_atomic
 
 _DOCKER_HUB_URL = 'https://registry.hub.docker.com'
 
@@ -382,8 +382,8 @@ class DockerSource(Source):
 
         return json.loads(text.decode('utf-8'))
 
-    def _save_manifest(self, text):
-        manifest_file = os.path.join(self.get_mirror_directory(), self.digest + '.manifest.json')
+    def _save_manifest(self, text, path):
+        manifest_file = os.path.join(path, self.digest + '.manifest.json')
         with save_file_atomic(manifest_file, 'wb') as f:
             f.write(text.encode('utf-8'))
 
@@ -396,43 +396,51 @@ class DockerSource(Source):
     def fetch(self):
         with self.timed_activity("Fetching image {}:{} with digest {}".format(self.image, self.tag, self.digest),
                                  silent_nested=True):
-            mirror_dir = self.get_mirror_directory()
-
-            try:
-                manifest = self._load_manifest()
-            except FileNotFoundError:
+            with self.tempdir() as tmpdir:
+                # move all files to a tmpdir
                 try:
-                    manifest_text, digest = self.client.manifest(self.image, self.digest)
-                except requests.RequestException as e:
-                    raise SourceError(e) from e
-
-                if digest != self.digest:
-                    raise SourceError("Requested image {}, got manifest with digest {}".
-                                      format(self.digest, digest))
-                self._save_manifest(manifest_text)
-                manifest = json.loads(manifest_text)
-            except DockerManifestError as e:
-                self.log("Unexpected manifest", detail=e.manifest)
-                raise
-            except (OSError, requests.RequestException) as e:
-                raise SourceError(e) from e
-
-            for layer in manifest['layers']:
-                if layer['mediaType'] != 'application/vnd.docker.image.rootfs.diff.tar.gzip':
-                    raise SourceError("Unsupported layer type: {}".format(layer['mediaType']))
-
-                layer_digest = layer['digest']
-                blob_path = os.path.join(mirror_dir, layer_digest + '.tar.gz')
-
-                if not os.path.exists(blob_path):
+                    manifest = self._load_manifest()
+                except FileNotFoundError:
                     try:
-                        self.client.blob(self.image, layer_digest, download_to=blob_path)
-                    except (OSError, requests.RequestException) as e:
-                        if os.path.exists(blob_path):
-                            shutil.rmtree(blob_path)
+                        manifest_text, digest = self.client.manifest(self.image, self.digest)
+                    except requests.RequestException as e:
                         raise SourceError(e) from e
 
-                self._verify_blob(blob_path, expected_digest=layer_digest)
+                    if digest != self.digest:
+                        raise SourceError("Requested image {}, got manifest with digest {}".
+                                          format(self.digest, digest))
+                    self._save_manifest(manifest_text, tmpdir)
+                    manifest = json.loads(manifest_text)
+                except DockerManifestError as e:
+                    self.log("Unexpected manifest", detail=e.manifest)
+                    raise
+                except (OSError, requests.RequestException) as e:
+                    raise SourceError(e) from e
+
+                for layer in manifest['layers']:
+                    if layer['mediaType'] != 'application/vnd.docker.image.rootfs.diff.tar.gzip':
+                        raise SourceError("Unsupported layer type: {}".format(layer['mediaType']))
+
+                    layer_digest = layer['digest']
+                    blob_path = os.path.join(tmpdir, layer_digest + '.tar.gz')
+
+                    if not os.path.exists(blob_path):
+                        try:
+                            self.client.blob(self.image, layer_digest, download_to=blob_path)
+                        except (OSError, requests.RequestException) as e:
+                            if os.path.exists(blob_path):
+                                shutil.rmtree(blob_path)
+                            raise SourceError(e) from e
+
+                    self._verify_blob(blob_path, expected_digest=layer_digest)
+
+                # Only if all sources are successfully fetched, move files to staging directory
+
+                # As both the manifest and blobs are content addressable, we can optimize space by having
+                # a flat mirror directory. We check one-by-one if there is any need to copy a file out of the tmpdir.
+                for fetched_file in os.listdir(tmpdir):
+                    move_atomic(os.path.join(tmpdir, fetched_file),
+                                os.path.join(self.get_mirror_directory(), fetched_file))
 
     def stage(self, directory):
         mirror_dir = self.get_mirror_directory()
@@ -517,9 +525,11 @@ class DockerSource(Source):
             for layer in manifest['layers']:
                 layer_digest = layer['digest']
                 blob_path = os.path.join(mirror_dir, layer_digest + '.tar.gz')
-
-                self._verify_blob(blob_path, expected_digest=layer_digest)
-
+                try:
+                    self._verify_blob(blob_path, expected_digest=layer_digest)
+                except FileNotFoundError:
+                    # digest fetched, but some layer blob not fetched
+                    return Consistency.INCONSISTENT
             return Consistency.CACHED
         except (FileNotFoundError, SourceError):
             return Consistency.RESOLVED
