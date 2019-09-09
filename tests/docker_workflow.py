@@ -5,7 +5,7 @@ import os
 import pytest
 from ruamel.yaml import YAML
 
-from tests.utils import build_and_checkout, push_image, load_image, untar, get_docker_host
+from tests.utils import build_and_checkout, push_image, load_image, untar, get_docker_host, create_element
 
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -37,7 +37,7 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
             }
         ]
     }
-    _create_element(yaml, local_fs, local_fs_element, project)
+    create_element(yaml, local_fs, local_fs_element, project)
 
     image_name = 'example-image'
 
@@ -51,7 +51,7 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
         },
         'build-depends': [local_fs]
     }
-    _create_element(yaml, example_image, example_image_element, project)
+    create_element(yaml, example_image, example_image_element, project)
 
     # checkout and push image
     image_checkout_dir = os.path.join(str(tmp_path), 'image_checkout')
@@ -73,7 +73,7 @@ def test_filesystem_equality(cli, datafiles, docker_client, docker_registry, tmp
             }
         ]
     }
-    _create_element(yaml, docker_source, docker_source_element, project)
+    create_element(yaml, docker_source, docker_source_element, project)
 
     # source track Docker-sourced import element
     result = cli.run(project=project, args=['source', 'track', docker_source])
@@ -112,7 +112,7 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
             }
         ]
     }
-    _create_element(yaml, hello_world_source, hello_world_source_element, project)
+    create_element(yaml, hello_world_source, hello_world_source_element, project)
 
     hello_world_checkout_rel_dir = os.path.join('files', 'hello-world')
     hello_world_checkout_dir = os.path.join(project, hello_world_checkout_rel_dir)
@@ -132,7 +132,7 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
             }
         ]
     }
-    _create_element(yaml, import_hello_world, import_hello_world_element, project)
+    create_element(yaml, import_hello_world, import_hello_world_element, project)
 
     hello_world_rebuild = 'hello-world-image-rebuild.bst'
     hello_world_rebuild_element = {
@@ -142,7 +142,7 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
         },
         'build-depends': [import_hello_world]
     }
-    _create_element(yaml, hello_world_rebuild, hello_world_rebuild_element, project)
+    create_element(yaml, hello_world_rebuild, hello_world_rebuild_element, project)
 
     # build image
     rebuilt_image_checkout_dir = os.path.join(str(tmp_path), 'rebuilt_image_checkout_dir')
@@ -157,11 +157,6 @@ def test_image_equality(cli, datafiles, docker_client, tmp_path):
 
     # assert file systems are equal and have the same contents
     _compare_directory_files(layer_untar_dir, hello_world_checkout_dir)
-
-
-def _create_element(yaml, element_name, element_payload, project):
-    with open(os.path.join(project, 'elements', element_name), 'w') as element_handle:
-        yaml.dump(element_payload, element_handle)
 
 
 def _get_config_digest(checkout_dir):

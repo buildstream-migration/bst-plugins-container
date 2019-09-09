@@ -118,3 +118,15 @@ def _read_file_block(file_handle, block_size=8192):
             break
         else:
             yield data
+
+
+def create_element(yaml, element_name, element_payload, project):
+    """Create an element given a configuration
+
+    :param yaml: yaml client
+    :param element_name: Name of element to create
+    :param element_payload: dictionary configuration
+    :param project: root of project
+    """
+    with open(os.path.join(project, 'elements', element_name), 'w') as element_handle:
+        yaml.dump(element_payload, element_handle)
