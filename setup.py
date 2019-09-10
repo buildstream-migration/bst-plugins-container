@@ -76,10 +76,13 @@ setup(
     },
     extras_require={
         'test': [
+            'docker',
+            'pytest >= 3.1.0',
             'pytest-datafiles',
             'pytest-env',
             'pytest-xdist',
-            'pytest >= 3.1.0'
+            'responses',
+            'ruamel.yaml',
         ],
     },
     zip_safe=False
