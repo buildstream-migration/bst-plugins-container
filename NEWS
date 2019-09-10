@@ -3,6 +3,16 @@ Next Version
 ============
 
 ===========================
+bst-plugins-container 0.2.4
+===========================
+
+  o Add option for `docker_image` element to have tag-less image names,
+    defaults to tag of "latest" in such cases.
+  o Allow `docker` source to fetch images with white-out files.
+  o Add `timestamp` option to `docker_image` element to give users the ability
+    to set the creation time of the generated images to a deterministic value.
+
+===========================
 bst-plugins-container 0.2.3
 ===========================
 
