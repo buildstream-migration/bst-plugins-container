@@ -47,6 +47,8 @@ from buildstream.utils import move_atomic
 
 
 class DockerElement(Element):
+    # pylint: disable=too-many-instance-attributes
+
     BST_FORBID_SOURCES = True
     BST_FORBID_RDEPENDS = True
     BST_RUN_COMMANDS = False
@@ -165,7 +167,7 @@ class DockerElement(Element):
         # In order to build a Docker image of something,
         # Docker Element will have to require at least one build dependency
         build_deps = list(self.dependencies(Scope.BUILD, recurse=False))
-        if len(build_deps) < 1:
+        if not build_deps:
             raise ElementError(
                 "{}: {} element must have at least one build dependency".format(
                     self, type(self).__name__
@@ -249,7 +251,11 @@ class DockerElement(Element):
         self._create_manifest(layer_dir, layer_digests, image_id)
 
         with self.timed_activity("Pack Image", silent_nested=True):
-            self._pack_image(layer_dir, image_dir)
+            # Tar contents of output dir to generate image
+            tar_name = os.path.join(image_dir, "image.tar")
+            with tarfile.TarFile.open(name=tar_name, mode="w") as tar_handle:
+                for f in os.listdir(layer_dir):
+                    tar_handle.add(os.path.join(layer_dir, f), arcname=f)
 
         return "/image"
 
@@ -294,20 +300,6 @@ class DockerElement(Element):
             element.stage_dependency_artifacts(
                 sandbox, Scope.NONE, path=layer_path
             )
-
-    def _pack_image(self, layer_dir, image_dir):
-        """tars `layer_dir` to create the docker-image, which is then placed in `image_dir`
-
-        :param layer_dir: location of all untared docker-image files
-        :param image_dir: location to place tared docker-image
-        """
-
-        # Tar contents of output dir to generate image
-        tar_name = os.path.join(image_dir, "image.tar")
-        mode = "w"
-        with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
-            for f in os.listdir(layer_dir):
-                tar_handle.add(os.path.join(layer_dir, f), arcname=f)
 
     def _create_repositories_file(self, outputdir, top_layer_digest):
         """creates a repository file which contains all of the image's tags
@@ -395,6 +387,7 @@ class DockerElement(Element):
         return image_digest
 
     def _create_layer(self, changeset_dir, layer_dir):
+        # pylint: disable=too-many-locals
         """creates the following file structure in layer_dir for the layer specified in chageset_dir
 
                     ├── <hash_digest>
