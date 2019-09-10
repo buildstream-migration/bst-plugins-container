@@ -54,7 +54,7 @@ format-check:
 lint:
   stage: test
   script:
-    - tox -e rst-lint
+    - tox -e lint,rst-lint
 
 docs:
   <<: *tox
