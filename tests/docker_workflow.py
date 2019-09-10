@@ -21,6 +21,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "project")
 def test_filesystem_equality(
     cli, datafiles, docker_client, docker_registry, tmp_path
 ):
+    # pylint: disable=too-many-locals
     """
     Check that creating a docker_image from a base filesystem, and reimporting
     this image as a docker_source results in the same filesystem.
@@ -95,7 +96,8 @@ def test_filesystem_equality(
 
 
 @pytest.mark.datafiles(DATA_DIR)
-def test_image_equality(cli, datafiles, docker_client, tmp_path):
+def test_image_equality(cli, datafiles, tmp_path):
+    # pylint: disable=too-many-locals
     """
     Check that the filesystem of a rebuilt image built from an imported third-party image,
     results in the filesystem of the third-party image.

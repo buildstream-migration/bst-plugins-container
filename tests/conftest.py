@@ -1,7 +1,7 @@
 import socket
 import time
 
-from buildstream.testing import cli
+from buildstream.testing import cli  # pylint: disable=unused-import
 import docker
 import pytest
 
@@ -9,6 +9,9 @@ from tests.utils import get_docker_host
 
 DOCKER_REGISTRY_IMAGE = "registry:2"
 DOCKER_REGISTRY_PORT = 5000
+
+# Pylint and pytest fixtures don't play well together
+# pylint: disable=redefined-outer-name
 
 #################################################
 #            Implement pytest option            #

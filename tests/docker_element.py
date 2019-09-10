@@ -133,6 +133,8 @@ def test_diamond_deps_docker_image(docker_client, cli, datafiles, tmp_path):
 def test_nested_overwrite_docker_image(
     docker_client, cli, datafiles, tmp_path
 ):
+    # pylint: disable=too-many-locals
+
     test_element = "nested-overwrite.bst"
     project = str(datafiles)
     checkout_dir = os.path.join(str(tmp_path), "checkout")
@@ -259,7 +261,7 @@ def test_multiple_tags(docker_client, cli, datafiles, tmp_path):
 
 @pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
-def test_invalid_tag(docker_client, cli, datafiles, tmp_path):
+def test_invalid_tag(cli, datafiles):
     project = str(datafiles)
     result = cli.run(project=project, args=["build", "invalid-tag.bst"])
     result.assert_main_error(ErrorDomain.ELEMENT, None)
@@ -275,9 +277,7 @@ def _get_layer_files(extract_path):
             ) as tar_handle:
                 layer_files.append(tar_handle.getmembers())
     # extract file name from tar_info
-    return [
-        set([member.name for member in tar_info]) for tar_info in layer_files
-    ]
+    return [{member.name for member in tar_info} for tar_info in layer_files]
 
 
 def _get_number_of_file_duplications(layer_files):

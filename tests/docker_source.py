@@ -9,6 +9,9 @@ from .utils import create_element
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "project")
 
+# Pylint and responses don't play well together
+# pylint: disable=no-member
+
 
 @pytest.mark.datafiles(DATA_DIR)
 def test_docker_fetch(cli, datafiles):
