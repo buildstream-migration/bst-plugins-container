@@ -150,7 +150,7 @@ class DockerRegistryV2Client:
         )
 
         if (
-            response.status_code == requests.codes.UNAUTHORIZED
+            response.status_code == requests.codes["unauthorized"]
             and not _reauthorized
         ):
             # This request requires (re)authorization. See:
@@ -185,7 +185,8 @@ class DockerRegistryV2Client:
     #
     # Returns:
     #    (str) A Docker-compatible digest of 'content'
-    def digest(self, content):
+    @staticmethod
+    def digest(content):
         digest_hash = hashlib.sha256()
         digest_hash.update(content)
         return "sha256:" + digest_hash.hexdigest()
@@ -221,6 +222,8 @@ class DockerRegistryV2Client:
         architecture=default_architecture(),
         os_=default_os(),
     ):
+        # pylint: disable=too-many-locals
+
         accept_types = [
             "application/vnd.docker.distribution.manifest.v2+json",
             "application/vnd.docker.distribution.manifest.list.v2+json",
@@ -347,6 +350,7 @@ class ReadableTarInfo(tarfile.TarInfo):
 
 
 class DockerSource(Source):
+    # pylint: disable=too-many-instance-attributes
 
     BST_FORMAT_VERSION = 1
 
@@ -355,14 +359,16 @@ class DockerSource(Source):
     # BuildStream. However, Docker theoretically supports multiple hash
     # methods while BuildStream does not. Right now every Docker registry
     # uses sha256 so let's ignore that issue for the time being.
-    def _digest_to_ref(self, digest):
+    @staticmethod
+    def _digest_to_ref(digest):
         if digest.startswith("sha256:"):
             return digest[len("sha256:") :]
         else:
             method = digest.split(":")[0]
             raise SourceError("Unsupported digest method: {}".format(method))
 
-    def _ref_to_digest(self, ref):
+    @staticmethod
+    def _ref_to_digest(ref):
         return "sha256:" + ref
 
     def configure(self, node):
@@ -423,6 +429,8 @@ class DockerSource(Source):
         self.digest = self._ref_to_digest(ref)
 
     def track(self):
+        # pylint: disable=arguments-differ
+
         # If the tracking ref is not specified it's not an error, just silently return
         if not self.tag:
             return None
@@ -465,7 +473,8 @@ class DockerSource(Source):
         with save_file_atomic(manifest_file, "wb") as f:
             f.write(text.encode("utf-8"))
 
-    def _verify_blob(self, path, expected_digest):
+    @staticmethod
+    def _verify_blob(path, expected_digest):
         blob_digest = "sha256:" + sha256sum(path)
         if expected_digest != blob_digest:
             raise SourceError(
@@ -475,6 +484,8 @@ class DockerSource(Source):
             )
 
     def fetch(self):
+        # pylint: disable=arguments-differ
+
         with self.timed_activity(
             "Fetching image {}:{} with digest {}".format(
                 self.image, self.tag, self.digest
