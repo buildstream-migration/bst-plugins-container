@@ -62,7 +62,7 @@ def test_handle_network_error(cli, datafiles):
     result.assert_task_error(ErrorDomain.SOURCE, None)
 
     # check that BuildStream still runs normally
-    result = cli.run(project=project, args=["show"])
+    result = cli.run(project=project, args=["show", "dockerhub-alpine.bst"])
     result.assert_success()
 
 

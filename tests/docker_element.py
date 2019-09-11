@@ -3,6 +3,7 @@ import os
 import tarfile
 
 import pytest
+from buildstream._exceptions import ErrorDomain
 
 from tests.utils import (
     build_and_checkout,
@@ -232,6 +233,37 @@ def test_custom_tag(docker_client, cli, datafiles, tmp_path):
     tag = get_image_tag(load_image(docker_client, checkout_dir))
 
     assert tag.split(":")[1] == "this-is-a-tag"
+
+
+# Regression test for #18.
+# Ensure that we can tag the same image with multiple tags, some of which share
+# the same name.
+@pytest.mark.docker
+@pytest.mark.datafiles(DATA_DIR)
+def test_multiple_tags(docker_client, cli, datafiles, tmp_path):
+    project = str(datafiles)
+    checkout_dir = os.path.join(str(tmp_path), "checkout")
+    expected_tags = [
+        "bst-plugins-container-tests/multiple-tags/name1:tag1",
+        "bst-plugins-container-tests/multiple-tags/name1:tag2",
+        "bst-plugins-container-tests/multiple-tags/name2:tag1",
+        "bst-plugins-container-tests/multiple-tags/name2:tag2",
+        "bst-plugins-container-tests/multiple-tags/name3:tag6",
+    ]
+
+    build_and_checkout("multiple-tags.bst", checkout_dir, cli, project)
+    tags = load_image(docker_client, checkout_dir)[0].tags
+
+    assert sorted(tags) == sorted(expected_tags)
+
+
+@pytest.mark.docker
+@pytest.mark.datafiles(DATA_DIR)
+def test_invalid_tag(docker_client, cli, datafiles, tmp_path):
+    project = str(datafiles)
+    result = cli.run(project=project, args=["build", "invalid-tag.bst"])
+    result.assert_main_error(ErrorDomain.ELEMENT, None)
+    assert "Invalid image name" in result.stderr
 
 
 def _get_layer_files(extract_path):

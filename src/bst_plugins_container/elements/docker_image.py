@@ -57,6 +57,10 @@ class DockerElement(Element):
 
     def configure(self, node):
 
+        # The list of names for this image. Each entry must be a tuple of form
+        # (NAME, TAG).
+        self.names = []
+
         # validate yaml
         node.validate_keys(
             [
@@ -93,19 +97,26 @@ class DockerElement(Element):
             "Timeout": health_check_node.get_int("timeout", default=0),
             "Retries": health_check_node.get_int("retries", default=0),
         }
-        self._image_names = node.get_sequence("image-names").as_str_list()
 
         # Reformat certain lists to dictionary as mandated by Docker image specification
         self._exposed_ports = {port: {} for port in self._exposed_ports}
         self._volumes = {volume: {} for volume in self._volumes}
 
-        for i, image in enumerate(self._image_names):
-            if ":" not in image:
-                # enforce a default tag of 'latest'
-                self._image_names[i] = "{}:latest".format(image)
-        self._image_names = dict(
-            [repo.split(":", 1) for repo in self._image_names]
-        )
+        image_names = node.get_sequence("image-names")
+        for full_name in image_names.as_str_list():
+            if ":" in full_name:
+                try:
+                    name, tag = full_name.split(":")
+                except ValueError:
+                    raise ElementError(
+                        "{}: Invalid image name. Names must be of form 'NAME' or 'NAME:TAG'.".format(
+                            image_names.get_provenance()
+                        )
+                    )
+            else:
+                name = full_name
+                tag = "latest"
+            self.names.append((name, tag))
 
         # Set Headers
         self._author = "BuildStream docker_image plugin"
@@ -167,8 +178,10 @@ class DockerElement(Element):
         repository_syntax = re.compile(
             r"([a-z0-9][._/-]?)+(:([a-z0-9][._/-]?)+)?"
         )
-        for image_name in self._image_names:
-            if not repository_syntax.fullmatch(image_name):
+        for image_name, tag in self.names:
+            if not repository_syntax.fullmatch(
+                "{}:{}".format(image_name, tag)
+            ):
                 raise ElementError(
                     "{}: {} image name is not valid".format(self, image_name),
                     reason="docker-bdepend-wrong-count",
@@ -198,7 +211,7 @@ class DockerElement(Element):
             "volumes": self._volumes,
             "working-dir": self._working_dir,
             "health-check": self._health_check,
-            "image-names": self._image_names,
+            "image-names": self.names,
             "image-spec-version": self.IMAGE_SPEC_VERSION,
             "layer-config-version": self.LAYER_CONFIG_VERSION,
         }
@@ -304,7 +317,7 @@ class DockerElement(Element):
         """
         repositories = {
             name: "{}:{}".format(tag, top_layer_digest)
-            for name, tag in self._image_names.items()
+            for name, tag in self.names
         }
 
         self._save_json(repositories, os.path.join(outputdir, "repositories"))
@@ -325,8 +338,7 @@ class DockerElement(Element):
                     for layer_digest in layer_digests
                 ],
                 "RepoTags": [
-                    "{}:{}".format(name, tag)
-                    for name, tag in self._image_names.items()
+                    "{}:{}".format(name, tag) for name, tag in self.names
                 ],
             }
         ]
