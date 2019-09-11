@@ -57,6 +57,10 @@ class DockerElement(Element):
 
     def configure(self, node):
 
+        # The list of names for this image. Each name must be a tuple of form
+        # (NAME, TAG).
+        self.names = []
+
         # validate yaml
         node.validate_keys(
             [
@@ -99,13 +103,16 @@ class DockerElement(Element):
         self._exposed_ports = {port: {} for port in self._exposed_ports}
         self._volumes = {volume: {} for volume in self._volumes}
 
-        for i, image in enumerate(self._image_names):
-            if ":" not in image:
-                # enforce a default tag of 'latest'
-                self._image_names[i] = "{}:latest".format(image)
-        self._image_names = dict(
-            [repo.split(":", 1) for repo in self._image_names]
-        )
+        for full_name in self._image_names:
+            if ":" in full_name:
+                try:
+                    name, tag = full_name.split(":")
+                except ValueError:
+                    raise ElementError("{}: Invalid image name. Names must be of form 'NAME' or 'NAME:TAG'.".format(self))
+            else:
+                name = full_name
+                tag = "latest"
+            self.names.append((name, tag))
 
         # Set Headers
         self._author = "BuildStream docker_image plugin"
@@ -167,7 +174,7 @@ class DockerElement(Element):
         repository_syntax = re.compile(
             r"([a-z0-9][._/-]?)+(:([a-z0-9][._/-]?)+)?"
         )
-        for image_name in self._image_names:
+        for image_name, _ in self.names:
             if not repository_syntax.fullmatch(image_name):
                 raise ElementError(
                     "{}: {} image name is not valid".format(self, image_name),
@@ -198,7 +205,7 @@ class DockerElement(Element):
             "volumes": self._volumes,
             "working-dir": self._working_dir,
             "health-check": self._health_check,
-            "image-names": self._image_names,
+            "image-names": self.names,
             "image-spec-version": self.IMAGE_SPEC_VERSION,
             "layer-config-version": self.LAYER_CONFIG_VERSION,
         }
@@ -304,7 +311,7 @@ class DockerElement(Element):
         """
         repositories = {
             name: "{}:{}".format(tag, top_layer_digest)
-            for name, tag in self._image_names.items()
+            for name, tag in self.names
         }
 
         self._save_json(repositories, os.path.join(outputdir, "repositories"))
@@ -326,7 +333,7 @@ class DockerElement(Element):
                 ],
                 "RepoTags": [
                     "{}:{}".format(name, tag)
-                    for name, tag in self._image_names.items()
+                    for name, tag in self.names
                 ],
             }
         ]
