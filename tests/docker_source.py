@@ -28,7 +28,13 @@ def test_docker_source_checkout(cli, datafiles):
     checkout = os.path.join(cli.directory, "checkout")
     result = cli.run(
         project=project,
-        args=["source", "checkout", "dockerhub-alpine.bst", checkout],
+        args=[
+            "source",
+            "checkout",
+            "--directory",
+            checkout,
+            "dockerhub-alpine.bst",
+        ],
     )
     result.assert_success()
     # Rather than make assertions about the whole Alpine Linux image, verify
