@@ -63,6 +63,7 @@ confidence=
 disable= fixme,
          invalid-name,
          missing-docstring,
+         no-else-break,
          no-else-raise,
          no-else-return,
          # Formatting issues that are covered by black
