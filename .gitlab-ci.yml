@@ -2,6 +2,7 @@ image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedor
 
 # Given limited CI resources we use various linux distribution images as proxies for the various
 # python versions. The following is the mapping between python versions and the respective linux distributions:
+# python:3.8-buster -> py38
 # fedora:30 -> py37
 # ubuntu:18 -> py36
 # debian:9  -> py35
@@ -25,6 +26,13 @@ stages:
     PY_COLORS: 1
     PYTEST_ADDOPTS: '--color=yes'
     DOCKER_TLS_CERTDIR: ""
+
+tests-py38:
+  <<: *tox
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-master-105004115
+  variables:
+    <<: *tox-variables
+    TOXENV: py38
 
 tests-py37:
   <<: *tox
