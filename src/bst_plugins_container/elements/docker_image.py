@@ -43,7 +43,7 @@ import re
 import tarfile
 
 from buildstream import Element, Scope, ElementError
-from buildstream.utils import move_atomic
+from buildstream.utils import move_atomic, BST_ARBITRARY_TIMESTAMP
 
 
 class DockerElement(Element):
@@ -130,8 +130,6 @@ class DockerElement(Element):
                 datetime.utcnow().replace(microsecond=0).isoformat()
             )
         elif self._timestamp == "deterministic":
-            from buildstream.utils import BST_ARBITRARY_TIMESTAMP
-
             return "{}T00:00:00Z".format(
                 date.fromtimestamp(BST_ARBITRARY_TIMESTAMP).isoformat()
             )
