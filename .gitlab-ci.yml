@@ -1,4 +1,4 @@
-image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-78573898
+image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-91671576
 
 # Given limited CI resources we use various linux distribution images as proxies for the various
 # python versions. The following is the mapping between python versions and the respective linux distributions:
@@ -34,14 +34,14 @@ tests-py37:
 
 tests-py36:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-78779247
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-91671576
   variables:
     <<: *tox-variables
     TOXENV: py36
 
 tests-py35:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-78779247
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-91671576
   variables:
     <<: *tox-variables
     TOXENV: py35
