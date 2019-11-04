@@ -570,9 +570,10 @@ class DockerSource(Source):
                 blob_path = os.path.join(mirror_dir, layer_digest + ".tar.gz")
 
                 self._verify_blob(blob_path, expected_digest=layer_digest)
-                extract_fileset, white_out_fileset = self._get_extract_and_remove_files(
-                    blob_path
-                )
+                (
+                    extract_fileset,
+                    white_out_fileset,
+                ) = self._get_extract_and_remove_files(blob_path)
 
                 # remove files associated with whiteouts
                 for white_out_file in white_out_fileset:

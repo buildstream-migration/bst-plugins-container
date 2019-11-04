@@ -70,9 +70,7 @@ def docker_registry(docker_client):
     Return address and port for the engine to reach the registry.
     """
     docker_client.images.pull(DOCKER_REGISTRY_IMAGE)
-    engine_to_registry = (
-        "localhost"
-    )  # the hostname the Docker engine addresses the Docker registry service
+    engine_to_registry = "localhost"  # the hostname the Docker engine addresses the Docker registry service
     engine_url = get_docker_host(docker_client)
 
     container = docker_client.containers.run(
