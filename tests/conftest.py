@@ -4,6 +4,7 @@ import time
 from buildstream.testing import cli  # pylint: disable=unused-import
 import docker
 import pytest
+import requests
 
 from tests.utils import get_docker_host
 
@@ -56,7 +57,14 @@ def docker_client():
 @pytest.fixture(autouse=True, scope="session")
 def teardown_generated_test_images(docker_client):
     yield
+
     # delete generated images from bst-plugins-container-tests
+    try:
+        docker_client.info()
+    except requests.exceptions.ConnectionError:
+        # Don't bother doing anything if we can't connect to the Docker daemon.
+        return
+
     for image_id in map(
         lambda image: image.id,
         docker_client.images.list(name="bst-plugins-container-tests/*"),

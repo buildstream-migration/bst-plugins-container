@@ -17,6 +17,7 @@ from tests.utils import (
 DATA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "project")
 
 
+@pytest.mark.docker
 @pytest.mark.datafiles(DATA_DIR)
 def test_filesystem_equality(
     cli, datafiles, docker_client, docker_registry, tmp_path

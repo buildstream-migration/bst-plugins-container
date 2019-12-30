@@ -46,6 +46,15 @@ tests-py35:
     <<: *tox-variables
     TOXENV: py35
 
+# Ensure that our tests work fine absence of optional dependencies.
+# Currently, this is limited to Docker daemon, so we just disable that service
+# for this job.
+tests-py35-missing-deps:
+  <<: *tox
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-94236816
+  script: tox -e py35
+  services: []
+
 format-check:
   stage: test
   script:
