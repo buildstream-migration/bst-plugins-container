@@ -1,4 +1,4 @@
-image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-94236816
+image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-${DOCKER_IMAGE_VERSION}
 
 # Given limited CI resources we use various linux distribution images as proxies for the various
 # python versions. The following is the mapping between python versions and the respective linux distributions:
@@ -10,6 +10,12 @@ image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedor
 stages:
   - test
   - post
+
+variables:
+  # Version of the docker images we should use for all the images.
+  # This is taken from buildstream/buildstream-docker-images and is updated
+  # periodically.
+  DOCKER_IMAGE_VERSION: master-105004115
 
 #####################################################
 #                    Test stage                     #
@@ -29,7 +35,7 @@ stages:
 
 tests-py38:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-master-105004115
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-${DOCKER_IMAGE_VERSION}
   variables:
     <<: *tox-variables
     TOXENV: py38
@@ -42,14 +48,14 @@ tests-py37:
 
 tests-py36:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-94236816
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-${DOCKER_IMAGE_VERSION}
   variables:
     <<: *tox-variables
     TOXENV: py36
 
 tests-py35:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-94236816
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-${DOCKER_IMAGE_VERSION}
   variables:
     <<: *tox-variables
     TOXENV: py35
@@ -59,7 +65,7 @@ tests-py35:
 # for this job.
 tests-py35-missing-deps:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-master-94236816
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-${DOCKER_IMAGE_VERSION}
   script: tox -e py35
   services: []
 
