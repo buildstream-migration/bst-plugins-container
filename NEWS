@@ -3,6 +3,14 @@ Next Version
 ============
 
 ===========================
+bst-plugins-container 0.3.0
+===========================
+
+o Adapt plugins in this package to BuildStream 1.93.0. Due to
+  backwards-incompatible nature of BuildStream 1.93.0, this version also drops
+  support for BuildStream <= 1.93.0.
+
+===========================
 bst-plugins-container 0.2.5
 ===========================
 
