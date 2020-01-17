@@ -63,7 +63,7 @@ import urllib.parse
 
 import requests
 
-from buildstream import Source, SourceError, Consistency
+from buildstream import Source, SourceError
 from buildstream.utils import (
     save_file_atomic,
     sha256sum,
@@ -354,6 +354,9 @@ class DockerSource(Source):
 
     BST_FORMAT_VERSION = 1
 
+    BST_REQUIRED_VERSION_MAJOR = 1
+    BST_REQUIRED_VERSION_MINOR = 93
+
     # Docker identifies images by a content digest calculated from the image's
     # manifest. This corresponds well with the concept of a 'ref' in
     # BuildStream. However, Docker theoretically supports multiple hash
@@ -449,6 +452,26 @@ class DockerSource(Source):
                 raise SourceError(e) from e
 
         return self._digest_to_ref(digest)
+
+    def is_resolved(self):
+        return self.digest is not None
+
+    def is_cached(self):
+        mirror_dir = self.get_mirror_directory()
+        try:
+            manifest = self._load_manifest()
+
+            for layer in manifest["layers"]:
+                layer_digest = layer["digest"]
+                blob_path = os.path.join(mirror_dir, layer_digest + ".tar.gz")
+                try:
+                    self._verify_blob(blob_path, expected_digest=layer_digest)
+                except FileNotFoundError:
+                    # digest fetched, but some layer blob not fetched
+                    return False
+            return True
+        except (FileNotFoundError, SourceError):
+            return False
 
     def _load_manifest(self):
         manifest_file = os.path.join(
@@ -634,27 +657,6 @@ class DockerSource(Source):
                     extract_fileset.append(member)
 
         return extract_fileset, delete_fileset
-
-    def get_consistency(self):
-        mirror_dir = self.get_mirror_directory()
-
-        if self.digest is None:
-            return Consistency.INCONSISTENT
-
-        try:
-            manifest = self._load_manifest()
-
-            for layer in manifest["layers"]:
-                layer_digest = layer["digest"]
-                blob_path = os.path.join(mirror_dir, layer_digest + ".tar.gz")
-                try:
-                    self._verify_blob(blob_path, expected_digest=layer_digest)
-                except FileNotFoundError:
-                    # digest fetched, but some layer blob not fetched
-                    return Consistency.INCONSISTENT
-            return Consistency.CACHED
-        except (FileNotFoundError, SourceError):
-            return Consistency.RESOLVED
 
 
 # Plugin entry point
