@@ -79,7 +79,7 @@ setup(
     },
     extras_require={
         'test': [
-            'buildstream >= 1.91.3.dev0',
+            'buildstream >= 1.93.0.dev0',
             'docker',
             'pytest >= 3.1.0',
             'pytest-datafiles',
