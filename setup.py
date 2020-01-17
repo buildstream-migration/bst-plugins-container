@@ -70,9 +70,11 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     entry_points={
-        'buildstream.plugins': [
-            'docker = bst_plugins_container.sources.docker',
+        'buildstream.plugins.elements': [
             'docker_image = bst_plugins_container.elements.docker_image',
+        ],
+        'buildstream.plugins.sources': [
+            'docker = bst_plugins_container.sources.docker',
         ]
     },
     extras_require={
