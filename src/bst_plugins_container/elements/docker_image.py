@@ -55,7 +55,7 @@ class DockerElement(Element):
     BST_RUN_COMMANDS = False
     IMAGE_SPEC_VERSION = "1.2"
     LAYER_CONFIG_VERSION = "1.0"
-    BST_FORMAT_VERSION = 1
+    BST_MIN_VERSION = "2.0"
 
     def configure(self, node):
 

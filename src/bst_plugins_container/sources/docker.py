@@ -352,10 +352,7 @@ class ReadableTarInfo(tarfile.TarInfo):
 class DockerSource(Source):
     # pylint: disable=too-many-instance-attributes
 
-    BST_FORMAT_VERSION = 1
-
-    BST_REQUIRED_VERSION_MAJOR = 1
-    BST_REQUIRED_VERSION_MINOR = 93
+    BST_MIN_VERSION = "2.0"
 
     # Docker identifies images by a content digest calculated from the image's
     # manifest. This corresponds well with the concept of a 'ref' in
