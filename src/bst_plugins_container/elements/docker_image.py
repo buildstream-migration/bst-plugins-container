@@ -41,9 +41,10 @@ import json
 import os
 import re
 import tarfile
+import tempfile
 
 from buildstream import Element, Scope, ElementError
-from buildstream.utils import move_atomic, BST_ARBITRARY_TIMESTAMP
+from buildstream.utils import BST_ARBITRARY_TIMESTAMP
 
 
 class DockerElement(Element):
@@ -52,7 +53,6 @@ class DockerElement(Element):
     BST_FORBID_SOURCES = True
     BST_FORBID_RDEPENDS = True
     BST_RUN_COMMANDS = False
-    BST_VIRTUAL_DIRECTORY = False
     IMAGE_SPEC_VERSION = "1.2"
     LAYER_CONFIG_VERSION = "1.0"
     BST_FORMAT_VERSION = 1
@@ -223,24 +223,17 @@ class DockerElement(Element):
         pass
 
     def assemble(self, sandbox):
-        basedir = sandbox.get_directory()
+        basedir = sandbox.get_virtual_directory()
 
-        # where dependencies will be staged
-        dep_dir = os.path.join(basedir, "dependencies")
         # where layers will be built
-        layer_dir = os.path.join(basedir, "layers")
+        layer_dir = basedir.descend("layers", create=True)
         # where final image will be produced
-        image_dir = os.path.join(basedir, "image")
-
-        # TODO use virtual directory interface to be remote-execution compatible
-        os.makedirs(dep_dir)
-        os.makedirs(layer_dir)
-        os.makedirs(image_dir)
+        image_dir = basedir.descend("image", create=True)
 
         # `layer_digests[0]` is the base layer, `layer_digest[n]` is the nth layer from the bottom
         layer_digests = [
             self._create_layer(layer_path, layer_dir)
-            for layer_path in self._stage_layers(sandbox, dep_dir)
+            for layer_path in self._stage_layers(sandbox)
         ]
 
         # create image level files
@@ -250,20 +243,21 @@ class DockerElement(Element):
 
         with self.timed_activity("Pack Image", silent_nested=True):
             # Tar contents of output dir to generate image
-            tar_name = os.path.join(image_dir, "image.tar")
-            with tarfile.TarFile.open(name=tar_name, mode="w") as tar_handle:
-                for f in os.listdir(layer_dir):
-                    tar_handle.add(os.path.join(layer_dir, f), arcname=f)
+            with image_dir.open_file("image.tar", mode="wb") as f:
+                with tarfile.open(fileobj=f, mode="w") as tar_handle:
+                    layer_dir.export_to_tar(tar_handle, "")
 
         return "/image"
 
-    def _stage_layers(self, sandbox, dep_dir):
+    def _stage_layers(self, sandbox):
         """stage dependencies to element sandbox
 
         :param sandbox: sandbox of `docker_image` element
-        :param dep_dir: directory in sandbox where to stage dependencies
         :return: list of paths to where the layers have been staged
         """
+        basedir = sandbox.get_virtual_directory()
+        dep_dir = basedir.descend("dependencies", create=True)
+
         # keep track of visited nodes
         visited = set()
         for dependency in self.dependencies(Scope.BUILD, recurse=False):
@@ -273,10 +267,8 @@ class DockerElement(Element):
                 "Staging {} Layer".format(dep_name), silent_nested=False
             ):
                 # create intermediate checkout directory for layer
-                layer_path = os.path.join(dep_dir, dep_name)
-                os.makedirs(layer_path, exist_ok=True)
-                parent_folder = os.path.basename(dep_dir)
-                relative_path = os.path.join(parent_folder, dep_name)
+                layer_path = dep_dir.descend(dep_name, create=True)
+                relative_path = os.path.join("dependencies", dep_name)
                 self._stage_layer(sandbox, relative_path, dependency, visited)
                 yield layer_path
 
@@ -310,7 +302,8 @@ class DockerElement(Element):
             for name, tag in self.names
         }
 
-        self._save_json(repositories, os.path.join(outputdir, "repositories"))
+        with outputdir.open_file("repositories", mode="w") as f:
+            json.dump(repositories, f, sort_keys=True)
 
     def _create_manifest(self, outputdir, layer_digests, config_digest):
         """creates the image manifest
@@ -333,7 +326,8 @@ class DockerElement(Element):
             }
         ]
 
-        self._save_json(manifest, os.path.join(outputdir, "manifest.json"))
+        with outputdir.open_file("manifest.json", mode="w") as f:
+            json.dump(manifest, f, sort_keys=True)
 
     def _create_image_config(self, outputdir, layer_digests):
         """creates image configuration file
@@ -371,16 +365,16 @@ class DockerElement(Element):
             ],
         }
 
-        tmp_image_config = os.path.join(outputdir, "tmp")
-        self._save_json(image_config, tmp_image_config)
+        # Calculate hash of the json configuration using a temporary file
+        with tempfile.NamedTemporaryFile(mode="w") as f:
+            json.dump(image_config, f, sort_keys=True)
+            f.flush()
+            image_digest = self._hash_digest(f.name)
 
-        # calculate hash of image
-        image_digest = self._hash_digest(tmp_image_config)
-        final_image_config = os.path.join(
-            outputdir, "{}.json".format(image_digest)
-        )
-
-        move_atomic(tmp_image_config, final_image_config)
+        # Import the json configuration into CAS with the expected name, based
+        # on the hash
+        with outputdir.open_file(f"{image_digest}.json", mode="w") as f:
+            json.dump(image_config, f, sort_keys=True)
 
         return image_digest
 
@@ -398,48 +392,23 @@ class DockerElement(Element):
                 :return: hash_digest of layer
         """
         with self.timed_activity(
-            "Create {} Layer".format(os.path.basename(changeset_dir)),
-            silent_nested=True,
+            "Create {} Layer".format(changeset_dir), silent_nested=True,
         ):
-            # Create layer tar
-            tmp_layer_dir = os.path.join(layer_dir, "tmp")
-            os.makedirs(tmp_layer_dir, exist_ok=True)
-            tar_name = os.path.join(tmp_layer_dir, "layer.tar")
-            mode = "w"
+            # Create layer.tar
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Export dependencies to a tarball on disk
+                tar_name = os.path.join(tmpdir, "layer.tar")
+                with tarfile.open(name=tar_name, mode="w") as tarobj:
+                    changeset_dir.export_to_tar(tarobj, "")
 
-            def set_tar_headers(tarinfo):
-                tarinfo.mtime = self._created_timestamp
-                tarinfo.uid = tarinfo.gid = 0
-                return tarinfo
-
-            with tarfile.TarFile.open(name=tar_name, mode=mode) as tar_handle:
-                for root, directories, files in os.walk(changeset_dir):
-                    rel_root = image_root = os.path.relpath(
-                        root, changeset_dir
-                    )
-                    if rel_root == ".":
-                        image_root = "/"
-                    for file_ in sorted(files + directories):
-                        path = os.path.join(changeset_dir, rel_root, file_)
-                        image_path = os.path.join(image_root, file_)
-                        tar_handle.add(
-                            path,
-                            arcname=image_path,
-                            filter=set_tar_headers,
-                            recursive=False,
-                        )
-
-            # Calculate hash
-            hash_digest = self._hash_digest(tar_name)
-
-            # Rename tmp folder to hash of layer.tar
-            layer_directory = os.path.join(layer_dir, hash_digest)
-            move_atomic(tmp_layer_dir, layer_directory)
+                # Calculate checksum, and import into CAS with the correct
+                # directory structure
+                hash_digest = self._hash_digest(tar_name)
+                target_dir = layer_dir.descend(hash_digest, create=True)
+                target_dir.import_single_file(tar_name)
 
             # Create VERSION file
-            with open(
-                os.path.join(layer_directory, "VERSION"), "w+"
-            ) as version_handle:
+            with target_dir.open_file("VERSION", mode="w") as version_handle:
                 version_handle.write(self.LAYER_CONFIG_VERSION)
 
             # Create json file
@@ -457,8 +426,8 @@ class DockerElement(Element):
                     "WorkingDir": self._working_dir,
                 },
             }
-
-            self._save_json(v1_json, os.path.join(layer_directory, "json"))
+            with target_dir.open_file("json", mode="w") as json_f:
+                json.dump(v1_json, json_f, sort_keys=True)
 
         return hash_digest
 
@@ -474,17 +443,6 @@ class DockerElement(Element):
             for block in self._read_file_block(file_handle):
                 hash_algorithm.update(block)
         return hash_algorithm.hexdigest()
-
-    @staticmethod
-    def _save_json(body, file_location):
-        """creates file at `file_location` and writes `body` to the file
-
-        :param body: payload
-        :param file_location: path of file
-        """
-        with open(file_location, "w+") as file_handle:
-            # Order the json. This is because py35 does not preserve insertion order whilst >=py36 does.
-            json.dump(body, file_handle, sort_keys=True)
 
     @staticmethod
     def _read_file_block(file_handle, block_size=8192):
