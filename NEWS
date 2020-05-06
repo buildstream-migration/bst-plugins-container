@@ -3,6 +3,15 @@ Next Version
 ============
 
 ===========================
+bst-plugins-container 0.4.0
+===========================
+
+o BREAKING CHANGE: Adapt plugins to BuildStream 1.93.3.
+
+  Due to backwards incompatible nature of the API changes in BuildStream, this
+  release also drops support for BuildStream <= 1.93.3.
+
+===========================
 bst-plugins-container 0.3.0
 ===========================
 
