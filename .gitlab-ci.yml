@@ -5,7 +5,6 @@ image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedor
 # python:3.8-buster -> py38
 # fedora:30 -> py37
 # ubuntu:18 -> py36
-# debian:9  -> py35
 
 stages:
   - test
@@ -53,19 +52,12 @@ tests-py36:
     <<: *tox-variables
     TOXENV: py36
 
-tests-py35:
-  <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-${DOCKER_IMAGE_VERSION}
-  variables:
-    <<: *tox-variables
-    TOXENV: py35
-
 # Ensure that our tests work fine absence of optional dependencies.
 # Currently, this is limited to Docker daemon, so we just disable that service
 # for this job.
-tests-py35-missing-deps:
+tests-py36-missing-deps:
   <<: *tox
-  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-debian:9-${DOCKER_IMAGE_VERSION}
+  image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-${DOCKER_IMAGE_VERSION}
   script: tox -e py35
   services: []
 
