@@ -1,5 +1,5 @@
 This package provides the following `BuildStream plugins
-<https://buildstream.gitlab.io/buildstream/core_plugins.html#external-plugins>`_:
+<https://docs.buildstream.build/master/format_project.html#loading-plugins>`_:
 
 Element Plugins
 ===============

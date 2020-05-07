@@ -24,7 +24,7 @@ Usage
 
 There are two ways to use external BuildStream plugins, either as a submodule,
 or as a Python package. See BuildStream's
-`External plugin documentation <https://docs.buildstream.build/format_project.html#external-plugins>`_
+`External plugin documentation <https://docs.buildstream.build/master/format_project.html#loading-plugins>`_
 for more details.
 
 Using the plugins as a Python package
@@ -36,7 +36,7 @@ you will first need to install bst-plugins-container via pip::
 
 The plugins must be declared in *project.conf*. To do this, please refer
 to BuildStream's
-`Local plugins documentation <https://buildstream.gitlab.io/buildstream/format_project.html#local-plugins>`_.
+`Local plugins documentation <https://docs.buildstream.build/master/format_project.html#local-plugins>`_.
 
 Using the plugins locally within a project
 ------------------------------------------
@@ -48,4 +48,4 @@ BuildStream project, you will first need to clone the repo to a location
 
 The plugins must be declared in *project.conf*. To do this, please refer
 to BuildStream's
-`Pip plugins documentation <https://buildstream.gitlab.io/buildstream/format_project.html#pip-plugins>`_.
+`Pip plugins documentation <https://docs.buildstream.build/master/format_project.html#local-plugins>`_.
