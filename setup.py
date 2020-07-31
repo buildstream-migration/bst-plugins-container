@@ -81,7 +81,10 @@ setup(
         'test': [
             'buildstream >= 1.93.3.dev0',
             'docker',
-            'pytest >= 3.1.0',
+            # FIXME: Relax the version constraints below once
+            # https://gitlab.com/BuildStream/buildstream/-/issues/1377 is fixed
+            # upstream.
+            'pytest >= 3.1.0, < 6.0.0',
             'pytest-datafiles',
             'pytest-env',
             'pytest-xdist',
