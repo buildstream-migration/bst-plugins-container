@@ -79,12 +79,10 @@ setup(
     },
     extras_require={
         'test': [
-            'buildstream >= 1.93.3.dev0',
+            'buildstream >= 1.93.5.dev0',
             'docker',
-            # FIXME: Relax the version constraints below once
-            # https://gitlab.com/BuildStream/buildstream/-/issues/1377 is fixed
-            # upstream.
-            'pytest >= 3.1.0, < 6.0.0',
+            # BuildStream's testing module requires pytest >= 6.0.1
+            'pytest >= 6.0.1',
             'pytest-datafiles',
             'pytest-env',
             'pytest-xdist',
