@@ -44,7 +44,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/x-rst; charset=UTF-8',
     author='BuildStream Developers',
-    author_email='buildstream-list@gnome.org',
+    author_email='dev@buildstream.apache.org',
     license='LGPL',
     classifiers=[
         'Environment :: Console',
@@ -61,7 +61,7 @@ setup(
         'Source': 'https://gitlab.com/BuildStream/bst-plugins-container',
         'Documentation': 'https://buildstream.gitlab.io/bst-plugins-container/',
         'Tracker': 'https://gitlab.com/BuildStream/bst-plugins-container/issues',
-        'Mailing List': 'https://mail.gnome.org/mailman/listinfo/buildstream-list'
+        'Mailing List': 'https://lists.apache.org/list.html?dev@buildstream.apache.org'
     },
     include_package_data=True,
     install_requires=[
