@@ -43,7 +43,7 @@ import re
 import tarfile
 import tempfile
 
-from buildstream import Element, Scope, ElementError
+from buildstream import Element, ElementError
 from buildstream.utils import BST_ARBITRARY_TIMESTAMP
 
 
@@ -164,7 +164,7 @@ class DockerElement(Element):
 
         # In order to build a Docker image of something,
         # Docker Element will have to require at least one build dependency
-        build_deps = list(self.dependencies(Scope.BUILD, recurse=False))
+        build_deps = list(self.dependencies(recurse=False))
         if not build_deps:
             raise ElementError(
                 "{}: {} element must have at least one build dependency".format(
@@ -220,7 +220,8 @@ class DockerElement(Element):
         pass
 
     def stage(self, sandbox):
-        pass
+
+        self._stage_layers(sandbox)
 
     def assemble(self, sandbox):
         basedir = sandbox.get_virtual_directory()
@@ -233,7 +234,7 @@ class DockerElement(Element):
         # `layer_digests[0]` is the base layer, `layer_digest[n]` is the nth layer from the bottom
         layer_digests = [
             self._create_layer(layer_path, layer_dir)
-            for layer_path in self._stage_layers(sandbox)
+            for layer_path in self._layer_directories(sandbox)
         ]
 
         # create image level files
@@ -249,28 +250,34 @@ class DockerElement(Element):
 
         return "/image"
 
+    def _layer_directories(self, sandbox):
+        """yield directories of staged layers
+
+        :param sandbox: sandbox of `docker_image` element
+        :return: list of Directory objects where the layers have been staged
+        """
+        basedir = sandbox.get_virtual_directory()
+        dep_dir = basedir.descend("dependencies", create=True)
+        for dependency in self.dependencies(recurse=False):
+            yield dep_dir.descend(dependency.normal_name)
+
     def _stage_layers(self, sandbox):
         """stage dependencies to element sandbox
 
         :param sandbox: sandbox of `docker_image` element
         :return: list of paths to where the layers have been staged
         """
-        basedir = sandbox.get_virtual_directory()
-        dep_dir = basedir.descend("dependencies", create=True)
-
         # keep track of visited nodes
         visited = set()
-        for dependency in self.dependencies(Scope.BUILD, recurse=False):
+        for dependency in self.dependencies(recurse=False):
             # turn each immediate build dependency into a layer
             dep_name = dependency.normal_name
             with self.timed_activity(
                 "Staging {} Layer".format(dep_name), silent_nested=False
             ):
                 # create intermediate checkout directory for layer
-                layer_path = dep_dir.descend(dep_name, create=True)
                 relative_path = os.path.join("dependencies", dep_name)
                 self._stage_layer(sandbox, relative_path, dependency, visited)
-                yield layer_path
 
     def _stage_layer(self, sandbox, layer_path, element, visited):
         """stages all run-time dependencies of `element` in 'layer_path` according to a dfs traversal
@@ -284,12 +291,10 @@ class DockerElement(Element):
         if element not in visited:
             visited.add(element)
             # only interested in run time dependencies of immediate build dependencies
-            for dependency in element.dependencies(Scope.RUN):
+            for dependency in element.dependencies():
                 self._stage_layer(sandbox, layer_path, dependency, visited)
             # add current element's diff-set
-            element.stage_dependency_artifacts(
-                sandbox, Scope.NONE, path=layer_path
-            )
+            element.stage_artifact(sandbox, path=layer_path)
 
     def _create_repositories_file(self, outputdir, top_layer_digest):
         """creates a repository file which contains all of the image's tags
