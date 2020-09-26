@@ -77,18 +77,5 @@ setup(
             'docker = bst_plugins_container.sources.docker',
         ]
     },
-    extras_require={
-        'test': [
-            'buildstream >= 1.93.5.dev0',
-            'docker',
-            # BuildStream's testing module requires pytest >= 6.0.1
-            'pytest >= 6.0.1',
-            'pytest-datafiles',
-            'pytest-env',
-            'pytest-xdist',
-            'responses',
-            'ruamel.yaml',
-        ],
-    },
     zip_safe=False
 )  # eof setup()

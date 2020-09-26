@@ -1,0 +1,5 @@
+# The dependencies listed here are necessary for specifc plugins, but
+# aren't required for bst-plugins-container to be installed.
+
+# Docker source
+requests
