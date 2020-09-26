@@ -121,7 +121,7 @@ def urljoin(url, *args):
 #
 class DockerManifestError(SourceError):
     def __init__(self, message, manifest=None):
-        super(DockerManifestError, self).__init__(message)
+        super().__init__(message)
         self.manifest = manifest
 
 
@@ -242,7 +242,7 @@ class DockerRegistryV2Client:
             raise DockerManifestError(
                 "Server did not return a valid manifest: {}".format(e),
                 manifest=response.text,
-            )
+            ) from e
 
         schema_version = manifest.get("schemaVersion")
         if schema_version == 1:
@@ -516,20 +516,20 @@ class DockerSource(Source):
                 # move all files to a tmpdir
                 try:
                     manifest = self._load_manifest()
-                except FileNotFoundError:
+                except FileNotFoundError as e:
                     try:
                         manifest_text, digest = self.client.manifest(
                             self.image, self.digest
                         )
-                    except requests.RequestException as e:
-                        raise SourceError(e) from e
+                    except requests.RequestException as ee:
+                        raise SourceError(ee) from ee
 
                     if digest != self.digest:
                         raise SourceError(
                             "Requested image {}, got manifest with digest {}".format(
                                 self.digest, digest
                             )
-                        )
+                        ) from e
                     self._save_manifest(manifest_text, tmpdir)
                     manifest = json.loads(manifest_text)
                 except DockerManifestError as e:
