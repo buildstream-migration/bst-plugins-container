@@ -382,17 +382,18 @@ class DockerElement(Element):
         # pylint: disable=too-many-locals
         """creates the following file structure in layer_dir for the layer specified in chageset_dir
 
-                    ├── <hash_digest>
-                        ├── VERSION
-                        ├── json
-                        └── layer.tar
+            ├── <hash_digest>
+                ├── VERSION
+                ├── json
+                └── layer.tar
 
-                :param changeset_dir: change-set for particular layer
-                :param layer_dir: directory where layer will be built
-                :return: hash_digest of layer
+        :param changeset_dir: change-set for particular layer
+        :param layer_dir: directory where layer will be built
+        :return: hash_digest of layer
         """
         with self.timed_activity(
-            "Create {} Layer".format(changeset_dir), silent_nested=True,
+            "Create {} Layer".format(changeset_dir),
+            silent_nested=True,
         ):
             # Create layer.tar
             with tempfile.TemporaryDirectory() as tmpdir:

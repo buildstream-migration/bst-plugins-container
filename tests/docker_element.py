@@ -178,18 +178,18 @@ def test_nested_overwrite_docker_image(
 @pytest.mark.datafiles(DATA_DIR)
 def test_share_layers_docker_image(docker_client, cli, datafiles, tmp_path):
     """
-        We have the following dependency graphs:
+    We have the following dependency graphs:
 
-        (1) multiple-deps.bst
-            |-> layer1.bst
-            |-> layer2.bst
-            |-> layer3.bst
+    (1) multiple-deps.bst
+        |-> layer1.bst
+        |-> layer2.bst
+        |-> layer3.bst
 
-        (2) nested-deps.bst -> layer2-nest.bst -|
-            |                                   V
-            |------------------------->layer1.bst
+    (2) nested-deps.bst -> layer2-nest.bst -|
+        |                                   V
+        |------------------------->layer1.bst
 
-        Test that both images share the layer associated with layer1.bst
+    Test that both images share the layer associated with layer1.bst
     """
     test_element1 = "nested-overwrite.bst"
     test_element2 = "multiple-deps.bst"
