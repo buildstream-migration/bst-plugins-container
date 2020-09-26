@@ -109,12 +109,12 @@ class DockerElement(Element):
             if ":" in full_name:
                 try:
                     name, tag = full_name.split(":")
-                except ValueError:
+                except ValueError as e:
                     raise ElementError(
                         "{}: Invalid image name. Names must be of form 'NAME' or 'NAME:TAG'.".format(
                             image_names.get_provenance()
                         )
-                    )
+                    ) from e
             else:
                 name = full_name
                 tag = "latest"
@@ -193,14 +193,14 @@ class DockerElement(Element):
             try:
                 iso_format = "%Y-%m-%dT%H:%M:%Sz"
                 datetime.strptime(self._timestamp, iso_format)
-            except ValueError:
+            except ValueError as e:
                 # does not match specified format
                 raise ElementError(
                     "{}: {} timestamp is not valid".format(
                         self, self._timestamp
                     ),
                     reason="docker-wrong-timestamp-format",
-                )
+                ) from e
 
     def get_unique_key(self):
         return {
