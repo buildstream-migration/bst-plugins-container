@@ -7,22 +7,45 @@ env:
   DOCKER_OPTIONS: --mount type=bind,source=$(pwd),destination=/home/bst-plugins-container --workdir=/home/bst-plugins-container
 
 jobs:
-  format-check:
-    name: format-check
+        #  format-check:
+        #    name: format-check
+        #    runs-on: ubuntu-latest
+        #    steps:
+        #      - uses: actions/checkout@v2
+        #      - name: format-check
+        #        run: |
+        #          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
+        #              tox -e format-check
+        #
+        #  lint:
+        #    name: lint
+        #    runs-on: ubuntu-latest
+        #    steps:
+        #      - uses: actions/checkout@v2
+        #      - name: lint
+        #        run: |
+        #          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
+        #              tox -e lint,rst-lint
+        #
+  docs:
+    name: docs
     runs-on: ubuntu-latest
+    env:
+      DOCKER_ENV_VARIABLES: >
+        -e DOCKER_HOST=tcp://docker:2375/
+        -e PY_COLORS=1
+        -e PYTEST_ADDOPTS='--color=yes'
+        -e DOCKER_TLS_CERTDIR=""
+        -e TOXENV=docs
     steps:
       - uses: actions/checkout@v2
-      - name: format-check
+      - name: docs
         run: |
-          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
-              tox -e format-check
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: lint
-        run: |
-          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
-              tox -e lint,rst-lint
+          docker run ${{ env.DOCKER_OPTIONS }} ${DOCKER_ENV_VARIABLES} ${DEFAULT_DOCKER_IMAGE} \
+              tox
+          mkdir artifact
+          sudo mv doc/build/html artifact/public
+      - uses: actions/upload-artifact@v1
+        with:
+          name: public
+          path: artifact
