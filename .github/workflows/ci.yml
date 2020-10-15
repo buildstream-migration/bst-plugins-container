@@ -7,6 +7,16 @@ env:
   DOCKER_OPTIONS: --mount type=bind,source=$(pwd),destination=/home/bst-plugins-container --workdir=/home/bst-plugins-container
 
 jobs:
+  format-check:
+    name: format-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: format-check
+        run: |
+          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
+              tox -e format-check
+
   lint:
     name: lint
     runs-on: ubuntu-latest
