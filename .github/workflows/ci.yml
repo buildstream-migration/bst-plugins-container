@@ -7,45 +7,44 @@ env:
   DOCKER_OPTIONS: --mount type=bind,source=$(pwd),destination=/home/bst-plugins-container --workdir=/home/bst-plugins-container
 
 jobs:
-        #  format-check:
-        #    name: format-check
-        #    runs-on: ubuntu-latest
-        #    steps:
-        #      - uses: actions/checkout@v2
-        #      - name: format-check
-        #        run: |
-        #          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
-        #              tox -e format-check
-        #
-        #  lint:
-        #    name: lint
-        #    runs-on: ubuntu-latest
-        #    steps:
-        #      - uses: actions/checkout@v2
-        #      - name: lint
-        #        run: |
-        #          docker run ${{ env.DOCKER_OPTIONS }} ${DEFAULT_DOCKER_IMAGE} \
-        #              tox -e lint,rst-lint
-        #
-  docs:
-    name: docs
+  simple-jobs: 
+    name: ${{matrix.task.name}}
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+        task:
+          - name: format-check
+            commands: tox -e format-check
+            docker-env: {}
+          - name: lint
+            commands: tox -e lint,rst-lint
+            docker-env: {}
+          - name: docs 
+            commands: |
+              tox
+              mkdir artifact
+              sudo mv doc/build/html artifact/public
+            docker-env:
+              DOCKER_HOST: tcp://docker:2375/
+              PY_COLORS: 1
+              PYTEST_ADDOPTS: '--color=yes'
+              DOCKER_TLS_CERTDIR: ""
+              TOXENV: docs
+            artifact-name: public
+            artifact-path: artifact
+
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-      env:
-        DOCKER_HOST: tcp://docker:2375/
-        PY_COLORS: 1
-        PYTEST_ADDOPTS: '--color=yes'
-        DOCKER_TLS_CERTDIR: ""
-        TOXENV: docs
-    steps:
+      image: ${{matrix.image}}
+      env: ${{matrix.task.docker-env}}
+    steps: 
       - uses: actions/checkout@v2
-      - name: docs
-        run: |
-          tox
-          mkdir artifact
-          sudo mv doc/build/html artifact/public
-      - uses: actions/upload-artifact@v1
+      - name: ${{matrix.task.name}}
+        run: ${{matrix.task.commands}}
+      - if: ${{matrix.task.artifact-name}}
+        uses: actions/upload-artifact@v1
         with:
-          name: public
-          path: artifact
+          name: ${{matrix.task.artifact-name}}
+          path: ${{matrix.task.artifact-path}}
