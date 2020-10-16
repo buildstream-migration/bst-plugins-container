@@ -9,6 +9,11 @@ env:
 jobs:
   simple-jobs: 
     name: ${{matrix.task.name}}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{matrix.image}}
+      env: ${{matrix.task.docker-env}}
+
     strategy:
       fail-fast: false
       matrix:
@@ -35,10 +40,6 @@ jobs:
             artifact-name: public
             artifact-path: artifact
 
-    runs-on: ubuntu-latest
-    container:
-      image: ${{matrix.image}}
-      env: ${{matrix.task.docker-env}}
     steps: 
       - uses: actions/checkout@v2
       - name: ${{matrix.task.name}}
@@ -48,3 +49,22 @@ jobs:
         with:
           name: ${{matrix.task.artifact-name}}
           path: ${{matrix.task.artifact-path}}
+
+  py-tests:
+    name: tests-py37
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+      env: 
+        DOCKER_HOST: tcp://docker:2375/
+        PY_COLORS: 1
+        PYTEST_ADDOPTS: '--color=yes'
+        DOCKER_TLS_CERTDIR: ""
+        TOXENV: py37
+    services:
+      docker:dind:
+        image: docker:dind
+    steps:
+      - uses: actions/checkout@v2
+      - name: tests-py37
+        run: tox -- --docker
