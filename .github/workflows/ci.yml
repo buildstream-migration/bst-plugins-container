@@ -30,19 +30,19 @@ jobs:
   docs:
     name: docs
     runs-on: ubuntu-latest
-    env:
-      DOCKER_ENV_VARIABLES: >
-        -e DOCKER_HOST=tcp://docker:2375/
-        -e PY_COLORS=1
-        -e PYTEST_ADDOPTS='--color=yes'
-        -e DOCKER_TLS_CERTDIR=""
-        -e TOXENV=docs
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+      env:
+        DOCKER_HOST: tcp://docker:2375/
+        PY_COLORS: 1
+        PYTEST_ADDOPTS: '--color=yes'
+        DOCKER_TLS_CERTDIR: ""
+        TOXENV: docs
     steps:
       - uses: actions/checkout@v2
       - name: docs
         run: |
-          docker run ${{ env.DOCKER_OPTIONS }} ${DOCKER_ENV_VARIABLES} ${DEFAULT_DOCKER_IMAGE} \
-              tox
+          tox
           mkdir artifact
           sudo mv doc/build/html artifact/public
       - uses: actions/upload-artifact@v1
