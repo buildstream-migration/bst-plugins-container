@@ -50,23 +50,26 @@ jobs:
         #          name: ${{matrix.task.artifact-name}}
         #          path: ${{matrix.task.artifact-path}}
         #
+
   py-tests:
-    name: tests-py37
+    name: ${{matrix.task.name}}
     runs-on: ubuntu-latest
-      #    container:
-      #      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-      #      env: 
-      #        DOCKER_HOST: tcp://docker:2375/
-      #        PY_COLORS: 1
-      #        PYTEST_ADDOPTS: '--color=yes'
-      #        DOCKER_TLS_CERTDIR: ""
-      #        TOXENV: py37
-      #    services:
-      #      docker:dind:
-      #        image: docker:dind
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - name: tests-py38
+            toxenv: py38
+            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-master-105004115
+          - name: tests py37
+            toxenv: py37
+            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+          - name: tests py36
+            toxenv: py36
+            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-105004115
     steps:
       - uses: actions/checkout@v2
-      - name: tests-py37
+      - name: tests
         run: |
           docker run --privileged --rm -p 12375:2375 -e DOCKER_TLS_CERTDIR="" docker:dind &
           docker run \
@@ -77,6 +80,6 @@ jobs:
             -e DOCKER_TLS_CERTDIR="" \
             -e PY_COLORS=1 \
             -e PYTEST_ADDOPTS='--color=yes' \
-            -e TOXENV=py37 \
-            registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115 \
-            tox -- --docker
+            -e TOXENV=${{matrix.task.toxenv}} \
+            ${{matrix.task.image}} \
+            tox -- -- --docker
