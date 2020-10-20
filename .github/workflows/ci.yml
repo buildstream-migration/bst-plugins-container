@@ -1,55 +1,53 @@
 name: CI
 on: [push]
 
-env:
-  DOCKER_IMAGE_VERSION: master-105004115
-  DEFAULT_DOCKER_IMAGE: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-  DOCKER_OPTIONS: --mount type=bind,source=$(pwd),destination=/home/bst-plugins-container --workdir=/home/bst-plugins-container
-
 jobs:
-        #  simple-jobs: 
-        #    name: ${{matrix.task.name}}
-        #    runs-on: ubuntu-latest
-        #    container:
-        #      image: ${{matrix.image}}
-        #      env: ${{matrix.task.docker-env}}
-        #
-        #    strategy:
-        #      fail-fast: false
-        #      matrix:
-        #        image:
-        #          - registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-        #        task:
-        #          - name: format-check
-        #            commands: tox -e format-check
-        #            docker-env: {}
-        #          - name: lint
-        #            commands: tox -e lint,rst-lint
-        #            docker-env: {}
-        #          - name: docs 
-        #            commands: |
-        #              tox
-        #              mkdir artifact
-        #              sudo mv doc/build/html artifact/public
-        #            docker-env:
-        #              DOCKER_HOST: tcp://docker:2375/
-        #              PY_COLORS: 1
-        #              PYTEST_ADDOPTS: '--color=yes'
-        #              DOCKER_TLS_CERTDIR: ""
-        #              TOXENV: docs
-        #            artifact-name: public
-        #            artifact-path: artifact
-        #
-        #    steps: 
-        #      - uses: actions/checkout@v2
-        #      - name: ${{matrix.task.name}}
-        #        run: ${{matrix.task.commands}}
-        #      - if: ${{matrix.task.artifact-name}}
-        #        uses: actions/upload-artifact@v1
-        #        with:
-        #          name: ${{matrix.task.artifact-name}}
-        #          path: ${{matrix.task.artifact-path}}
-        #
+  simple-jobs: 
+    name: ${{matrix.task.name}}
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+      env: ${{matrix.task.docker-env}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - name: format-check
+            commands: tox -e format-check
+            docker-env: {}
+          - name: lint
+            commands: tox -e lint,rst-lint
+            docker-env: {}
+          - name: docs 
+            commands: |
+              tox
+              mkdir artifact
+              sudo mv doc/build/html artifact/public
+            docker-env:
+              DOCKER_HOST: tcp://docker:2375/
+              PY_COLORS: 1
+              PYTEST_ADDOPTS: '--color=yes'
+              DOCKER_TLS_CERTDIR: ""
+              TOXENV: docs
+            artifact-name: public
+            artifact-path: artifact
+
+    steps: 
+      - uses: actions/checkout@v2
+      - name: ${{matrix.task.name}}
+        run: ${{matrix.task.commands}}
+      - if: ${{matrix.task.artifact-name}}
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{matrix.task.artifact-name}}
+          path: ${{matrix.task.artifact-path}}
+
+          #format-check:
+          #  name: format-check
+          #  runs-on: ubuntu-latest
+          #  container:
+          #    image: 
 
   py-tests:
     name: ${{matrix.task.name}}
@@ -57,29 +55,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        image_version:
+          - master-105004115
         task:
           - name: tests-py38
             toxenv: py38
-            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-master-105004115
+            image_prefix: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-python:3.8-buster-
           - name: tests py37
             toxenv: py37
-            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+            image_prefix: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-
           - name: tests py36
             toxenv: py36
-            image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-master-105004115
+            image_prefix: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-ubuntu:18.04-
+    env:
+      # (">-" is a YAML construct, which means the following lines will be concatenated
+      # onto a one-line string, with no newline at the end.)
+      DOCKER_OPTIONS: >-
+        --rm 
+        --network=host
+        --workdir=/home/bst-plugins-container
+        --mount type=bind,source=$(pwd),destination=/home/bst-plugins-container
+      DOCKER_ENV_OPTIONS: >-
+        -e DOCKER_HOST=tcp://localhost:12375/
+        -e DOCKER_TLS_CERTDIR=""
+        -e PY_COLORS=1
+        -e PYTEST_ADDOPTS='--color=yes'
+    
     steps:
       - uses: actions/checkout@v2
       - name: tests
         run: |
           docker run --privileged --rm -p 12375:2375 -e DOCKER_TLS_CERTDIR="" docker:dind &
-          docker run \
-            --network=host --rm \
-            --mount type=bind,source=$(pwd),destination=/home/root \
-            --workdir=/home/root \
-            -e DOCKER_HOST=tcp://localhost:12375/ \
-            -e DOCKER_TLS_CERTDIR="" \
-            -e PY_COLORS=1 \
-            -e PYTEST_ADDOPTS='--color=yes' \
+          docker run ${{env.DOCKER_OPTIONS}} ${{env.DOCKER_ENV_OPTIONS}} \
             -e TOXENV=${{matrix.task.toxenv}} \
-            ${{matrix.task.image}} \
-            tox -- -- --docker
+            ${{matrix.task.image_prefix}}${{matrix.image_version}} \
+            tox -- --docker
