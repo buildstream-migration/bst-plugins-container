@@ -1,12 +1,7 @@
 name: CI
 on: [push]
 
-#defaults:
-#  container:
-#    image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-
 jobs:
-
   py-tests:
     name: ${{matrix.task.name}}
     runs-on: ubuntu-latest
@@ -43,7 +38,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: tests
         run: |
-          docker run --privileged --rm -p 12375:2375 -e DOCKER_TLS_CERTDIR="" docker:dind &
+          docker run --privileged --rm -p 12375:2375 -p 5000:5000 -e DOCKER_TLS_CERTDIR="" docker:dind &
           docker run ${{env.DOCKER_OPTIONS}} ${{env.DOCKER_ENV_OPTIONS}} \
             -e TOXENV=${{matrix.task.toxenv}} \
             ${{matrix.task.image_prefix}}${{matrix.image_version}} \
@@ -86,5 +81,3 @@ jobs:
         with:
           name: public
           path: artifact
-
-
