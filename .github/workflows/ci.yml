@@ -1,53 +1,11 @@
 name: CI
 on: [push]
 
+#defaults:
+#  container:
+#    image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+
 jobs:
-  simple-jobs: 
-    name: ${{matrix.task.name}}
-    runs-on: ubuntu-latest
-    container:
-      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
-      env: ${{matrix.task.docker-env}}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        task:
-          - name: format-check
-            commands: tox -e format-check
-            docker-env: {}
-          - name: lint
-            commands: tox -e lint,rst-lint
-            docker-env: {}
-          - name: docs 
-            commands: |
-              tox
-              mkdir artifact
-              sudo mv doc/build/html artifact/public
-            docker-env:
-              DOCKER_HOST: tcp://docker:2375/
-              PY_COLORS: 1
-              PYTEST_ADDOPTS: '--color=yes'
-              DOCKER_TLS_CERTDIR: ""
-              TOXENV: docs
-            artifact-name: public
-            artifact-path: artifact
-
-    steps: 
-      - uses: actions/checkout@v2
-      - name: ${{matrix.task.name}}
-        run: ${{matrix.task.commands}}
-      - if: ${{matrix.task.artifact-name}}
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{matrix.task.artifact-name}}
-          path: ${{matrix.task.artifact-path}}
-
-          #format-check:
-          #  name: format-check
-          #  runs-on: ubuntu-latest
-          #  container:
-          #    image: 
 
   py-tests:
     name: ${{matrix.task.name}}
@@ -90,3 +48,43 @@ jobs:
             -e TOXENV=${{matrix.task.toxenv}} \
             ${{matrix.task.image_prefix}}${{matrix.image_version}} \
             tox -- --docker
+
+
+  format-check:
+    name: format-check
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+    steps:
+      - uses: actions/checkout@v2
+      - name: format-check
+        run: tox -e format-check
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+    steps:
+      - uses: actions/checkout@v2
+      - name: lint
+        run: tox -e lint,rst-lint
+
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/buildstream/buildstream-docker-images/testsuite-fedora:30-master-105004115
+    steps:
+      - uses: actions/checkout@v2
+      - name: docs
+        run: |
+          tox -e docs
+          mkdir artifact
+          sudo mv doc/build/html artifact/public
+      - uses: actions/upload-artifact@v1
+        with:
+          name: public
+          path: artifact
+
+
